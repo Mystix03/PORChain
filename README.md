@@ -74,4 +74,4 @@ Give the `https://...ngrok-free.app` URL to your friend. When they open it, thei
 POR-Chain implements **Self-Verifying Addresses**. A Node ID is the SHA-256 hash of the node's Public Key. This allows the network to verify any transaction without a central registry, as the signature itself proves ownership of the address.
 
 ## 📜 License
-MIT License. Created by Antigravity for the POR-Chain Project.
+MIT License.
