@@ -1,0 +1,150 @@
+"""
+wallet.py — Token wallet integrated with node identity.
+Wallet address = node_id. Every transaction is signed and recorded on-chain.
+State is derived strictly from the blockchain ledger, not local files.
+"""
+import time
+import uuid
+
+from modules import storage, identity
+
+_WALLET_FILE = "wallet.json"
+
+
+# ── Init ─────────────────────────────────────────────────────────────────────
+
+async def init() -> dict:
+    """Load or create wallet identity for this node."""
+    saved = await storage.read(_WALLET_FILE)
+    if saved:
+        return saved
+
+    node = identity.get()
+    wallet = {
+        "address": node["node_id"],
+    }
+    await storage.write(_WALLET_FILE, wallet)
+    return wallet
+
+
+# ── Accessors ─────────────────────────────────────────────────────────────────
+
+async def get() -> dict:
+    return await storage.read_or_default(_WALLET_FILE, {})
+
+
+async def balance(address: str = None) -> dict:
+    """Return the balance and staked amount for an address."""
+    if address is None:
+        address = identity.get()["node_id"]
+    
+    from modules import blockchain
+    chain = await blockchain.get_chain()
+    return blockchain.calculate_balance(address, chain)
+
+
+async def history(address: str = None) -> list:
+    """Return transaction history for an address."""
+    if address is None:
+        address = identity.get()["node_id"]
+    
+    from modules import blockchain
+    chain = await blockchain.get_chain()
+    
+    txs = []
+    
+    def process_event(ev, block_index):
+        if ev.get("type") in ("SEND", "STAKE", "UNSTAKE", "SLASH"):
+            record = ev.copy()
+            record["block_index"] = block_index
+            
+            is_sender = (ev.get("from") == address)
+            is_receiver = (ev.get("to") == address)
+            
+            if is_sender or is_receiver:
+                # If we are the receiver of a SEND, it's a RECEIVE for us
+                if is_receiver and ev.get("type") == "SEND":
+                    record["type"] = "RECEIVE"
+                txs.append(record)
+
+    for block in chain:
+        for ev in block.get("events", []):
+            process_event(ev, block.get("index"))
+    
+    # Also grab pending mempool transactions
+    from modules import consensus
+    for ev in consensus._pending_events:
+        process_event(ev, "Pending")
+
+    # Sort newest first
+    txs.sort(key=lambda x: x.get("timestamp", 0), reverse=True)
+    return txs
+
+
+# ── Transactions ──────────────────────────────────────────────────────────────
+
+async def send(to_address: str, amount: float) -> dict:
+    """Create a signed TX. Balance is validated by the network upon block creation."""
+    if amount <= 0:
+        raise ValueError("Amount must be positive")
+    
+    bal = await balance()
+    if bal["balance"] < amount:
+        raise ValueError(f"Insufficient balance ({bal['balance']:.4f} < {amount})")
+
+    tx = _build_tx("SEND", identity.get()["node_id"], to_address, amount)
+    return tx
+
+
+async def receive(tx: dict) -> bool:
+    """
+    Validate an incoming TX structure over P2P.
+    We no longer modify local balances. The transaction must be mined to affect balance.
+    """
+    payload = {k: v for k, v in tx.items() if k != "signature"}
+    if not identity.verify(identity.canonical(payload), tx["signature"], tx["sender_pubkey"]):
+        return False
+    return True
+
+
+async def stake(amount: float, reason: str = "VOUCH") -> dict:
+    """Lock tokens as stake (vouching). Returns stake TX."""
+    bal = await balance()
+    if bal["balance"] < amount:
+        raise ValueError("Insufficient balance to stake")
+    tx = _build_tx("STAKE", identity.get()["node_id"], "NETWORK", amount, note=reason)
+    return tx
+
+
+async def unstake(amount: float, reason: str = "RELEASED") -> dict:
+    """Release locked stake back to balance."""
+    bal = await balance()
+    release = min(amount, bal["staked"])
+    tx = _build_tx("UNSTAKE", identity.get()["node_id"], "NETWORK", release, note=reason)
+    return tx
+
+
+async def slash(amount: float) -> dict:
+    """Destroy staked tokens as penalty."""
+    bal = await balance()
+    loss = min(amount, bal["staked"])
+    tx = _build_tx("SLASH", identity.get()["node_id"], "BURN", loss, note="MALICIOUS_NODE")
+    return tx
+
+
+# ── Private ───────────────────────────────────────────────────────────────────
+
+def _build_tx(type_: str, from_: str, to: str, amount: float, note: str = "") -> dict:
+    node = identity.get()
+    payload = {
+        "tx_id": str(uuid.uuid4()),
+        "type": type_,
+        "from": from_,
+        "to": to,
+        "amount": amount,
+        "note": note,
+        "timestamp": time.time(),
+        "sender_pubkey": node["public_key"],
+    }
+    payload["signature"] = identity.sign(identity.canonical(payload))
+    return payload
