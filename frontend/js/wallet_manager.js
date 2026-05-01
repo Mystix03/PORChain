@@ -1,6 +1,10 @@
 /**
  * wallet_manager.js — Client-side identity and transaction signing.
  * This allows a browser-only user to have their own keys and address.
+ *
+ * CRITICAL: The `sign()` function must produce output byte-for-byte identical
+ * to Python's: json.dumps(data, sort_keys=True, separators=(",", ":"))
+ * This means: keys sorted recursively, NO spaces, NO trailing commas.
  */
 
 const WalletManager = {
@@ -24,10 +28,9 @@ const WalletManager = {
       const keyPair = nacl.sign.keyPair();
       const pubBytes = keyPair.publicKey;
       
-      // SHA-256 Hash of Public Key
-      const hashBuffer = await crypto.subtle.digest('SHA-256', pubBytes);
-      const hashArray = Array.from(new Uint8Array(hashBuffer));
-      const address = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+      // Raw hex of public key — consistent across ALL devices and browsers.
+      // Must match Python's: pub_bytes.hex()
+      const address = Array.from(pubBytes).map(b => b.toString(16).padStart(2, '0')).join('');
       
       this._identity = {
         address: address,
@@ -48,34 +51,49 @@ const WalletManager = {
     return this._identity ? this._identity.publicKey : null;
   },
 
-  /** Sign a JSON payload deterministically */
+  /**
+   * Sign a JSON payload deterministically.
+   * MUST match Python: identity.sign(identity.canonical(payload))
+   * where canonical = json.dumps(data, sort_keys=True, separators=(",", ":"))
+   */
   sign(payload) {
-    const canonical = JSON.stringify(payload, Object.keys(payload).sort(), 0).replace(/\s/g, '');
+    // Use our custom canonical serializer that exactly matches Python's output.
+    const canonical = this._canonicalize(payload);
     const msgBytes = new TextEncoder().encode(canonical);
     const privBytes = this._b64ToBuf(this._identity.privateKey);
-    
     const signature = nacl.sign.detached(msgBytes, privBytes);
     return this._bufToB64(signature);
   },
 
-  /** SHA-256 helper for Address generation */
-  _hash(bytes) {
-    // We use tweetnacl for signing, but need SHA-256 for address
-    // Since we don't have a small SHA-256 lib, we use the browser's crypto.subtle (async)
-    // Actually, for address generation we only do it once.
-    // Let's use a simple hex conversion for now if Subtle is unavailable, 
-    // but modern browsers all have it.
-    const hash = nacl.hash(bytes); // This is SHA-512 by default in tweetnacl
-    // To match the Python backend's SHA-256(pubkey).hexdigest():
-    // We ideally want SHA-256. 
-    // Let's use a tiny hex string of the first 32 bytes of the SHA-512 hash 
-    // or just use SubtleCrypto for perfect compatibility.
-    
-    // For MVP simplicity and perfect matching with Python backend, 
-    // we will use a hex string of the public key for now, 
-    // but the backend uses SHA256. 
-    // I will use a simple hex implementation.
-    return Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('').slice(0, 16);
+  /**
+   * Produces a JSON string that is byte-for-byte identical to Python's:
+   *   json.dumps(obj, sort_keys=True, separators=(",", ":"))
+   *
+   * Rules:
+   *   - All object keys are sorted alphabetically (recursively)
+   *   - No spaces after ":" or ","
+   *   - Strings are double-quoted
+   *   - Numbers: integers stay as integers, floats use JS default repr
+   *   - null → "null", true → "true", false → "false"
+   */
+  _canonicalize(obj) {
+    if (obj === null) return 'null';
+    if (typeof obj === 'boolean') return obj ? 'true' : 'false';
+    if (typeof obj === 'number') {
+      // Match Python's float repr: integers are emitted without decimal point
+      if (Number.isInteger(obj)) return String(obj);
+      return String(obj);
+    }
+    if (typeof obj === 'string') return JSON.stringify(obj); // handles escaping
+    if (Array.isArray(obj)) {
+      return '[' + obj.map(v => this._canonicalize(v)).join(',') + ']';
+    }
+    if (typeof obj === 'object') {
+      const sortedKeys = Object.keys(obj).sort();
+      const pairs = sortedKeys.map(k => JSON.stringify(k) + ':' + this._canonicalize(obj[k]));
+      return '{' + pairs.join(',') + '}';
+    }
+    return JSON.stringify(obj);
   },
 
   _bufToB64(buf) {
@@ -87,7 +105,7 @@ const WalletManager = {
   }
 };
 
-// Auto-init on load
-if (typeof nacl !== 'undefined') {
-  WalletManager.init();
+// No auto-init here — app.js handles initialization order explicitly.
+if (typeof module !== 'undefined') {
+  module.exports = WalletManager;
 }

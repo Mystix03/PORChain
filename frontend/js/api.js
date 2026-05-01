@@ -69,7 +69,7 @@ const api = {
       from: myAddr,
       to: to,
       amount: parseFloat(amount),
-      timestamp: Date.now() / 1000,
+      timestamp: Math.floor(Date.now() / 1000), // Force integer to prevent float stringify mismatch
       note: "Web Wallet Transfer",
       tx_id: crypto.randomUUID(),
       sender_pubkey: myPub
@@ -114,6 +114,14 @@ const api = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ target_id: targetId }),
     });
+    return r.json();
+  },
+
+  async getColdStartStatus(nodeId) {
+    const url = nodeId
+      ? `${BASE_URL}/coldstart/status?node_id=${nodeId}`
+      : `${BASE_URL}/coldstart/status`;
+    const r = await fetch(url);
     return r.json();
   },
 };

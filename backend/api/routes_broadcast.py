@@ -35,10 +35,22 @@ async def receive_broadcast(request: Request, msg: dict, bg_tasks: BackgroundTas
             await consensus.receive_block_proposal(block, sender_id)
 
     elif msg_type == "BLOCK_VOTE":
-        hash = payload.get("block_hash")
+        hash_ = payload.get("block_hash")
         voter = payload.get("voter_id")
         block = payload.get("block")
-        await consensus.receive_block_vote(hash, voter, block)
+        await consensus.receive_block_vote(hash_, voter, block)
+
+    elif msg_type == "BLOCK_FINALIZED":
+        # A block has already reached 2/3 consensus on the network.
+        # Apply it if we don't have it yet (catches up Phase 1/2 nodes).
+        block = payload.get("block")
+        if block:
+            from modules import identity as ident
+            my_id = ident.get()["node_id"]
+            my_phase = await registry.get_phase(my_id)
+            if my_phase not in ("PHASE_3", "FULL_NODE"):
+                # Non-voting node: apply the block directly if it's valid and next
+                await blockchain.append_block(block)
 
     elif msg_type == "TX":
         tx = payload.get("tx")
@@ -62,6 +74,15 @@ async def receive_broadcast(request: Request, msg: dict, bg_tasks: BackgroundTas
         target_id = payload.get("target_id")
         if voucher_id and target_id:
             await coldstart.vouch(voucher_id, target_id)
+
+    elif msg_type == "PHASE_UPDATE":
+        # A peer reports that a node has changed phase (graduation or ban).
+        # Update our local registry to stay consistent.
+        node_id = payload.get("node_id")
+        phase = payload.get("phase")
+        valid_phases = {"PHASE_1", "PHASE_2", "PHASE_3", "FULL_NODE", "BANNED"}
+        if node_id and phase in valid_phases:
+            await registry.set_phase(node_id, phase)
 
     # Re-broadcast to our other peers (gossip protocol)
     # We do this in the background to prevent P2P network deadlocks

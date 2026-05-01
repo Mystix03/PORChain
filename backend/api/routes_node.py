@@ -42,3 +42,18 @@ async def add_peer(body: dict):
         return {"error": "url required"}
     await networking.add_peer(url)
     return {"added": url}
+
+
+@router.get("/node/registry")
+async def get_registry():
+    """Return all known nodes with phase and reputation info. Used by ColdStart admin panel."""
+    from modules import coldstart
+    all_nodes = await registry.all_nodes()
+    result = {}
+    for node_id, info in all_nodes.items():
+        score = await reputation.get_score(node_id)
+        result[node_id] = {
+            **info,
+            "reputation_score": round(score, 4),
+        }
+    return {"nodes": result}

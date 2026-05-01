@@ -16,8 +16,8 @@ async function init() {
     hideSplash();
     
     // 3. Update UI with THIS browser's address
-    updateTopbar(_state);
-    updateDashboard(_state);
+    await updateTopbar(_state);
+    await updateDashboard(_state);
     await updateSidebarHeight();
   } catch (e) {
     document.getElementById('splash').innerHTML =

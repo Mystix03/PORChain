@@ -45,7 +45,8 @@ def _unb64(s: str) -> bytes:
 
 
 def _node_id_from_pub(pub_bytes: bytes) -> str:
-    return hashlib.sha256(pub_bytes).hexdigest()
+    # Use raw hex of public key for absolute consistency across all devices
+    return pub_bytes.hex()
 
 
 # ── Public API ────────────────────────────────────────────────────────────────

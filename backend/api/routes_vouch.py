@@ -21,6 +21,14 @@ async def submit_vouch(body: dict):
     result = await coldstart.vouch(my_id, target_id)
     if "error" in result:
         raise HTTPException(status_code=403, detail=result["error"])
+
+    # Broadcast the phase update so the target node (and network) knows it was vouched for
+    from modules import networking
+    await networking.broadcast("PHASE_UPDATE", {
+        "node_id": target_id,
+        "phase": "PHASE_3"
+    })
+
     return result
 
 

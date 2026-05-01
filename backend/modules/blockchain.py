@@ -2,6 +2,7 @@
 blockchain.py — Block creation, chain validation, and persistence.
 Each block is immutable once appended. Every node validates independently.
 """
+import asyncio
 import hashlib
 import json
 import time
@@ -33,19 +34,25 @@ def _merkle_root(events: list) -> str:
 
 # ── Genesis ───────────────────────────────────────────────────────────────────
 
+GENESIS_GRANT_AMOUNT = 100.0  # Starting balance for all bootstrap nodes
+
+
 def _genesis_block() -> dict:
-    """Fixed Genesis block so all nodes start on the same chain."""
+    """
+    Fixed Genesis block. It must be perfectly static so all nodes
+    derive the exact same genesis hash.
+    """
+    events = [{"type": "GENESIS", "data": {"note": "POR-Chain Network Launch"}}]
     block = {
         "index": 0,
         "previous_hash": "0" * 64,
-        "timestamp": 1714392000.0, # Fixed timestamp: April 29, 2024
-        "events": [{"type": "GENESIS", "data": {"note": "POR-Chain Network Launch"}}],
+        "timestamp": 1714392000.0,  # Fixed timestamp: April 29, 2024
+        "events": events,
         "proposer": "NETWORK",
         "merkle_root": "",
     }
     block["merkle_root"] = _merkle_root(block["events"])
     block["hash"] = _hash_block(block)
-    # Network Genesis is not signed by a specific node
     block["signature"] = "GENESIS_SIG"
     return block
 
@@ -101,21 +108,37 @@ async def propose_block(events: list) -> dict:
     return block
 
 
+_append_lock = asyncio.Lock()
+
 async def append_block(block: dict) -> bool:
-    """Validate and append a block to the local chain."""
-    if not await validate_block(block):
-        return False
-    chain = await get_chain()
-    chain.append(block)
-    await storage.write(_CHAIN_FILE, chain)
-    return True
+    """Validate and append a block to the local chain using a lock to prevent race conditions."""
+    async with _append_lock:
+        chain = await get_chain()
+        
+        # 1. Reject if we already have this block hash (prevents double-counting)
+        if any(b.get("hash") == block.get("hash") for b in chain):
+            return False
+            
+        # 2. Reject if the index is wrong (already filled by another block)
+        if block.get("index") != len(chain):
+            return False
+
+        # 3. Full cryptographic validation
+        if not await validate_block(block):
+            return False
+            
+        chain.append(block)
+        await storage.write(_CHAIN_FILE, chain)
+        return True
 
 
 # ── State Derivation ────────────────────────────────────────────────────────────
 
 def calculate_balance(address: str, chain: list) -> dict:
-    """Derive the true balance of an address by replaying the blockchain."""
-    # Everyone starts with 100 POR for this local test environment
+    """
+    Derive the true balance of an address by replaying the blockchain.
+    Everyone starts with 100 POR for this local test environment.
+    """
     balance = 100.0
     staked = 0.0
 
@@ -123,21 +146,24 @@ def calculate_balance(address: str, chain: list) -> dict:
         for ev in block.get("events", []):
             type_ = ev.get("type")
             amt = ev.get("amount", 0.0)
-            
-            if type_ == "SEND":
+
+            if type_ in ("GENESIS_GRANT", "FAUCET_GRANT") and ev.get("to") == address:
+                balance += amt
+
+            elif type_ == "SEND":
                 if ev.get("from") == address:
                     balance -= amt
                 if ev.get("to") == address:
                     balance += amt
-                    
+
             elif type_ == "STAKE" and ev.get("from") == address:
                 balance -= amt
                 staked += amt
-                
+
             elif type_ == "UNSTAKE" and ev.get("from") == address:
                 staked -= amt
                 balance += amt
-                
+
             elif type_ == "SLASH" and ev.get("from") == address:
                 staked -= amt
 
@@ -160,6 +186,9 @@ async def _verify_transactions(events: list, chain: list) -> bool:
 
     for ev in events:
         type_ = ev.get("type")
+        # GENESIS_GRANT, FAUCET_GRANT and GENESIS events have no signatures — skip verification
+        if type_ in ("GENESIS", "GENESIS_GRANT", "FAUCET_GRANT"):
+            continue
         if type_ in ("SEND", "STAKE", "UNSTAKE", "SLASH"):
             sender = ev.get("from")
             amt = ev.get("amount", 0.0)
@@ -174,7 +203,7 @@ async def _verify_transactions(events: list, chain: list) -> bool:
             import base64
             try:
                 pub_bytes = base64.b64decode(pubkey)
-                derived_id = hashlib.sha256(pub_bytes).hexdigest()
+                derived_id = pub_bytes.hex()
                 if derived_id != sender:
                     log.error(f"❌ TX Validation Failed: Sender ID {sender} does not match Public Key hash!")
                     return False

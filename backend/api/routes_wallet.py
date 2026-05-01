@@ -43,15 +43,22 @@ async def send_tokens(body: dict):
 @router.post("/wallet/broadcast")
 async def broadcast_signed_tx(tx: dict):
     """
-    Accept a pre-signed transaction from a web wallet and broadcast it.
+    Accept a pre-signed transaction from a browser wallet and broadcast it.
+    The signature is verified before the TX enters the mempool.
     """
     try:
-        # 1. Add to local mempool
+        # 1. Verify the signature — same path as the P2P TX handler
+        if not await wallet.receive(tx):
+            raise HTTPException(status_code=400, detail="Invalid transaction signature")
+
+        # 2. Add to local mempool
         from modules import consensus
         consensus.add_pending_event(tx)
-        
-        # 2. Broadcast to P2P network
+
+        # 3. Broadcast to P2P network
         await networking.broadcast("TX", {"tx": tx})
         return {"success": True, "tx_id": tx.get("tx_id")}
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))

@@ -46,6 +46,7 @@ async def select_proposer(seed: str | None = None) -> str | None:
 
 _pending_events: list = []
 _acceptance_votes: dict[str, set] = {}   # block_hash → set of accepting node_ids
+_proposed_blocks: dict[str, dict] = {}   # block_hash → full block (for non-voters)
 
 
 def add_pending_event(event: dict) -> None:
@@ -86,24 +87,31 @@ async def run_consensus_round() -> dict | None:
 async def receive_block_proposal(block: dict, proposer_id: str) -> bool:
     """
     Called when a peer broadcasts a BLOCK_PROPOSAL.
-    Validate and broadcast our acceptance vote to the network.
+    - PHASE_3 and FULL_NODE nodes validate and cast a vote.
+    - All other phases validate and cache the block so they can apply it
+      once it is finalized (via BLOCK_FINALIZED message).
     """
     from modules import identity as ident
     my_id = ident.get()["node_id"]
     my_phase = await registry.get_phase(my_id)
-    if my_phase not in ("PHASE_3", "FULL_NODE"):
-        return False  # Only trusted nodes can vote
 
     valid = await blockchain.validate_block(block)
     if not valid:
         return False
 
-    # Broadcast our vote to everyone
-    await networking.broadcast("BLOCK_VOTE", {
-        "block_hash": block.get("hash"),
-        "voter_id": my_id,
-        "block": block  # Include block so peers can verify if they missed the proposal
-    })
+    # Cache the block so we can apply it when finalized
+    _proposed_blocks[block.get("hash")] = block
+
+    if my_phase in ("PHASE_3", "FULL_NODE"):
+        # Broadcast our vote to everyone
+        await networking.broadcast("BLOCK_VOTE", {
+            "block_hash": block.get("hash"),
+            "voter_id": my_id,
+            "block": block
+        })
+        # Record our own vote locally
+        await receive_block_vote(block.get("hash"), my_id, block)
+
     return True
 
 
@@ -128,29 +136,40 @@ async def receive_block_vote(block_hash: str, voter_id: str, block: dict | None 
     required = max(1, int(full_node_count * config.CONSENSUS_THRESHOLD))
     
     if len(_acceptance_votes[block_hash]) >= required:
-        # We need the full block data to append
-        if not block:
-            return False # Waiting for the actual block proposal or another vote with data
+        # Prefer the cached block from a proposal, fallback to the block in the vote
+        final_block = _proposed_blocks.get(block_hash) or block
+        if not final_block:
+            return False
 
-        success = await blockchain.append_block(block)
+        success = await blockchain.append_block(final_block)
         if success:
             del _acceptance_votes[block_hash]
-            
+            _proposed_blocks.pop(block_hash, None)
+
             # Finalized! Remove accepted events from our pending pool
-            block_tx_ids = {e.get("tx_id") for e in block.get("events", []) if e.get("tx_id")}
+            block_tx_ids = {e.get("tx_id") for e in final_block.get("events", []) if e.get("tx_id")}
             global _pending_events
             _pending_events = [e for e in _pending_events if e.get("tx_id") not in block_tx_ids]
 
             # Credit proposer reputation
-            await reputation.update(block["proposer"], honest=True)
-            
-            from modules import identity as ident
-            my_id = ident.get()["node_id"]
-            my_phase = await registry.get_phase(my_id)
-            if my_phase == "PHASE_3":
-                from modules import coldstart
-                await coldstart.record_honest_round(my_id)
-            
+            await reputation.update(final_block["proposer"], honest=True)
+
+            # Broadcast BLOCK_FINALIZED so Phase 1/2 nodes can also apply it
+            await networking.broadcast("BLOCK_FINALIZED", {"block": final_block})
+
+            # Credit honest rounds to ALL Phase 3 voters, not just the local node
+            from modules import coldstart
+            for voter_node_id in _acceptance_votes.get(block_hash, set()):
+                voter_phase = await registry.get_phase(voter_node_id)
+                if voter_phase == "PHASE_3":
+                    result = await coldstart.record_honest_round(voter_node_id)
+                    # If they just graduated, broadcast so all peers know
+                    if result.get("phase") == "FULL_NODE":
+                        await networking.broadcast("PHASE_UPDATE", {
+                            "node_id": voter_node_id,
+                            "phase": "FULL_NODE",
+                        })
+
             return True
     return False
 
@@ -179,7 +198,8 @@ async def sync_chain_from_peers() -> None:
             try:
                 r = await client.get(f"{peer}/chain")
                 if r.status_code == 200:
-                    peer_chain = r.json()
+                    resp = r.json()
+                    peer_chain = resp.get("chain", [])
                     if len(peer_chain) > max_length:
                         # Validate the peer's chain
                         if await blockchain.is_valid_chain(peer_chain):

@@ -29,8 +29,17 @@ CONSENSUS_THRESHOLD: float = 0.667
 # ── Wallet ────────────────────────────────────────────────────────────────────
 GENESIS_BALANCE: float = 100.0
 
-# ── Storage — DATA_DIR env var lets multiple nodes share one codebase ─────────
-_default_data = pathlib.Path(__file__).parent / "data"
-DATA_DIR: pathlib.Path = pathlib.Path(os.getenv("DATA_DIR", str(_default_data)))
+# ── Storage — Unified Absolute Paths ──────────────────────────────────────────
+# Find the absolute path to the 'backend' directory
+_BACKEND_DIR = pathlib.Path(__file__).parent.resolve()
+_DEFAULT_DATA = _BACKEND_DIR / "data"
+
+# Ensure we use an absolute path for DATA_DIR
+_env_data = os.getenv("DATA_DIR")
+if _env_data:
+    DATA_DIR = pathlib.Path(_env_data).resolve()
+else:
+    DATA_DIR = _DEFAULT_DATA
+
 DATA_DIR.mkdir(parents=True, exist_ok=True)
 

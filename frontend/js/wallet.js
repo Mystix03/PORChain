@@ -4,25 +4,27 @@ let _walletState = null;
 
 async function renderWallet(state) {
   _walletState = state;
-  const myAddr = WalletManager.getAddress();
+  let myAddr = WalletManager.getAddress();
+  if (!myAddr) myAddr = state.node_id;
 
   // ── Address card ──────────────────────────────────────────────────────────
-  document.getElementById('wallet-address').textContent = myAddr;
+  const addrEl = document.getElementById('wallet-address');
+  if (addrEl) addrEl.textContent = myAddr || '—';
 
   // Also populate receive panel address
   const recvDisp = document.getElementById('receive-addr-display');
-  if (recvDisp) recvDisp.textContent = myAddr;
+  if (recvDisp) recvDisp.textContent = myAddr || '—';
 
   // Copy address button (main card)
   const copyBtn = document.getElementById('copy-address-btn');
   if (copyBtn) {
-    copyBtn.onclick = () => copyToClipboard(nodeId, copyBtn, '⎘ Copy Address');
+    copyBtn.onclick = () => copyToClipboard(myAddr, copyBtn, '⎘ Copy Address');
   }
 
   // Copy in receive panel
   const copyRecvBtn = document.getElementById('copy-receive-btn');
   if (copyRecvBtn) {
-    copyRecvBtn.onclick = () => copyToClipboard(nodeId, copyRecvBtn, '⎘ Copy');
+    copyRecvBtn.onclick = () => copyToClipboard(myAddr, copyRecvBtn, '⎘ Copy');
   }
 
   // Refresh TX history button
