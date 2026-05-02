@@ -59,17 +59,60 @@ def _verify_task_result(task: dict, submission: dict, node_id: str) -> bool:
     """Verify one task submission. Returns True if correct."""
     t = task["type"]
     if t == "HASH_PREIMAGE":
-        return submission.get("answer") == task["expected"]
+        answer = submission.get("answer") or ""
+        expected = task["expected"]
+        # The user's answer should be the SHA256 hash of the challenge string.
+        # We just check if they provided the correct expected hash.
+        passed = (answer.strip() == expected)
+        
+        from modules import audit
+        audit.log_event(
+            category="CRYPTO",
+            title="Phase 1: SHA256 Verification",
+            details=f"Challenge String:\n\"{task['challenge']}\"\n\nExpected SHA256:\n{expected}\n\nSubmitted Hash:\n{answer}\n\nVerification Result:\n{'PASS' if passed else 'FAIL'}"
+        )
+        return passed
     elif t == "VERIFY_HASH":
-        return submission.get("answer") == task["expected"]
+        answer = submission.get("answer") or ""
+        expected = task["expected"]
+        passed = (answer.strip() == expected)
+        
+        from modules import audit
+        audit.log_event(
+            category="CRYPTO",
+            title="Phase 1: Hash Verification",
+            details=f"Challenge String:\n\"{task['challenge']}\"\n\nExpected SHA256:\n{expected}\n\nSubmitted Hash:\n{answer}\n\nVerification Result:\n{'PASS' if passed else 'FAIL'}"
+        )
+        return passed
     elif t == "SIGN_CHALLENGE":
         sig = submission.get("signature", "")
         pubkey = submission.get("public_key", "")
+        
+        # Check if they did AUTO_SIGN logic
         if sig == "AUTO_SIGN" and pubkey == "AUTO_SIGN":
             if node_id == identity.get()["node_id"]:
+                from modules import audit
+                audit.log_event(
+                    category="CRYPTO",
+                    title="Phase 1: Signature Verification",
+                    details=f"Message:\n{task['challenge']}\n\nVerification:\nVALID SIGNATURE (Auto-Signed by Node Core)"
+                )
                 return True
-        return identity.verify(task["challenge"], sig, pubkey)
-    return False
+            return False
+            
+        is_valid = False
+        try:
+            is_valid = identity.verify(task["challenge"], sig, pubkey)
+        except Exception:
+            pass
+            
+        from modules import audit
+        audit.log_event(
+            category="CRYPTO",
+            title="Phase 1: Signature Verification",
+            details=f"Message:\n{task['challenge']}\n\nSignature:\n{sig[:16]}...\n\nPublic Key:\n{pubkey[:16]}...\n\nVerification:\n{'VALID SIGNATURE' if is_valid else 'INVALID SIGNATURE'}"
+        )
+        return is_valid
 
 
 async def submit_task_results(node_id: str, submissions: list[dict]) -> dict:
@@ -95,7 +138,6 @@ async def submit_task_results(node_id: str, submissions: list[dict]) -> dict:
 
     if passed:
         await registry.set_phase(node_id, "PHASE_2")
-        await reputation.set_initial(node_id, 0.1)  # small starter rep
 
     tasks_store[node_id]["results"] = {"score": score, "passed": passed}
     await storage.write(_TASKS_FILE, tasks_store)
@@ -131,32 +173,62 @@ async def vouch(voucher_id: str, target_id: str) -> dict:
     except ValueError as e:
         return {"error": str(e)}
 
-    # Give new node initial reputation transfer
-    r_new = config.VOUCH_ALPHA * voucher_score * config.VOUCH_DELTA
-    await reputation.set_initial(target_id, r_new)
-
-    # Record vouch
-    vouches = await storage.read_or_default(_VOUCHES_FILE, {})
+    # Record vouch locally
     vouch_record = {
         "voucher_id": voucher_id,
         "target_id": target_id,
         "stake_amount": stake_amount,
         "stake_tx": stake_tx["tx_id"],
-        "rep_granted": r_new,
+        "rep_granted": 0.0,
         "timestamp": time.time(),
         "status": "ACTIVE",
     }
-    vouches[target_id] = vouch_record
+    
+    # Broadcast to network so peers record the vouch (they won't stake again)
+    from modules import networking
+    await networking.broadcast("VOUCH", {"vouch_record": vouch_record})
+
+    return await receive_vouch(vouch_record)
+
+
+async def receive_vouch(vouch_record: dict) -> dict:
+    """Called when receiving a VOUCH broadcast. Records the vouch without double-staking."""
+    target_id = vouch_record.get("target_id")
+    voucher_id = vouch_record.get("voucher_id")
+    
+    if not target_id or not voucher_id:
+        return {"error": "Invalid vouch record"}
+
+    vouches = await storage.read_or_default(_VOUCHES_FILE, {})
+    if target_id not in vouches:
+        vouches[target_id] = []
+        
+    # Prevent double-vouching by the same node
+    if any(v.get("voucher_id") == voucher_id for v in vouches[target_id]):
+        return {"error": "Node already vouched"}
+        
+    vouches[target_id].append(vouch_record)
     await storage.write(_VOUCHES_FILE, vouches)
 
-    # Advance target to Phase 3
-    await registry.set_phase(target_id, "PHASE_3")
-    await registry.set_voucher(target_id, voucher_id)
+    # Check if we have enough vouches to advance to Phase 3
+    needed = getattr(config, "VOUCHES_REQUIRED", 2)
+    if len(vouches[target_id]) >= needed:
+        await registry.set_phase(target_id, "PHASE_3")
+        await registry.set_voucher(target_id, voucher_id)
+        
+        # Broadcast phase update if advancing (prevent loops by only having the final voucher broadcast)
+        from modules import identity as ident
+        my_id = ident.get()["node_id"]
+        if my_id == voucher_id:
+            from modules import networking
+            await networking.broadcast("PHASE_UPDATE", {
+                "node_id": target_id,
+                "phase": "PHASE_3",
+            })
 
     return vouch_record
 
-
-async def get_vouch_status(node_id: str) -> dict | None:
+async def get_vouch_status(node_id: str) -> list | None:
     vouches = await storage.read_or_default(_VOUCHES_FILE, {})
     return vouches.get(node_id)
 
@@ -168,19 +240,22 @@ async def get_vouch_status(node_id: str) -> dict | None:
 async def record_honest_round(node_id: str) -> dict:
     """Called after each honest block round. Graduates to FULL_NODE after M rounds."""
     rounds = await registry.increment_honest_rounds(node_id)
-    await reputation.update(node_id, honest=True)
 
     if rounds >= config.PHASE3_HONEST_ROUNDS:
         await registry.set_phase(node_id, "FULL_NODE")
-        # Release voucher stake
+        # Release voucher stake — vouch is now a list of records
         vouches = await storage.read_or_default(_VOUCHES_FILE, {})
-        vouch = vouches.get(node_id)
-        if vouch and vouch["status"] == "ACTIVE":
-            try:
-                await wallet.unstake(vouch["stake_amount"], reason=f"GRADUATED:{node_id}")
-            except Exception:
-                pass
-            vouches[node_id]["status"] = "RELEASED"
+        vouch_list = vouches.get(node_id, [])
+        changed = False
+        for v in vouch_list:
+            if isinstance(v, dict) and v.get("status") == "ACTIVE":
+                try:
+                    await wallet.unstake(v["stake_amount"], reason=f"GRADUATED:{node_id}")
+                except Exception:
+                    pass
+                v["status"] = "RELEASED"
+                changed = True
+        if changed:
             await storage.write(_VOUCHES_FILE, vouches)
         return {"phase": "FULL_NODE", "rounds": rounds}
 

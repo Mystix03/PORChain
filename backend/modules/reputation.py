@@ -28,14 +28,23 @@ async def update(node_id: str, honest: bool) -> float:
     h_t = 1.0 if honest else 0.0
     r_next = config.LAMBDA * r_t + (1 - config.LAMBDA) * h_t
     r_next = max(0.0, min(1.0, r_next))  # clamp to [0,1]
+    
+    from modules import audit
+    audit.log_event(
+        category="REPUTATION",
+        title=f"Reputation Updated for {node_id[:8]}...",
+        details=f"Old Score = {r_t:.3f}\nEquation: R(t+1) = {config.LAMBDA} * {r_t:.3f} + (1 - {config.LAMBDA}) * {h_t:.1f}\nNew Score = {r_next:.3f}"
+    )
+
     scores[node_id] = r_next
     await storage.write(_REP_FILE, scores)
     return r_next
 
-
-async def set_initial(node_id: str, value: float = 0.0) -> None:
+async def set_initial(node_id: str, value: float = None) -> None:
     """Set a starting reputation for a newly registered node."""
     scores = await storage.read_or_default(_REP_FILE, {})
+    if value is None:
+        value = getattr(config, "INITIAL_REPUTATION", 0.05)
     if node_id not in scores:
         scores[node_id] = value
         await storage.write(_REP_FILE, scores)

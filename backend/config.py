@@ -13,12 +13,13 @@ PEERS: list[str] = [p.strip() for p in os.getenv("PEERS", "").split(",") if p.st
 LAMBDA: float = float(os.getenv("LAMBDA", 0.9))
 FULL_NODE_REP_THRESHOLD: float = 0.7
 VOUCH_ELIGIBILITY_THRESHOLD: float = 0.6
-INITIAL_REPUTATION: float = 0.0
+INITIAL_REPUTATION: float = 0.05
 
 # ── ColdStart ─────────────────────────────────────────────────────────────────
 PHASE1_TASK_COUNT: int = 5
 PHASE1_PASS_THRESHOLD: float = 0.8
 PHASE3_HONEST_ROUNDS: int = 10
+VOUCHES_REQUIRED: int = 2
 VOUCH_DELTA: float = 0.1
 VOUCH_ALPHA: float = 0.5
 

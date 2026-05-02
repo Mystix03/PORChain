@@ -70,10 +70,9 @@ async def receive_broadcast(request: Request, msg: dict, bg_tasks: BackgroundTas
 
     elif msg_type == "VOUCH":
         # Vouch record from a peer
-        voucher_id = payload.get("voucher_id")
-        target_id = payload.get("target_id")
-        if voucher_id and target_id:
-            await coldstart.vouch(voucher_id, target_id)
+        vouch_record = payload.get("vouch_record")
+        if vouch_record:
+            await coldstart.receive_vouch(vouch_record)
 
     elif msg_type == "PHASE_UPDATE":
         # A peer reports that a node has changed phase (graduation or ban).

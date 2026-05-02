@@ -53,6 +53,12 @@ async function updateTopbar(state) {
   const badge = document.getElementById('phase-badge');
   badge.textContent = phaseLabel(state.phase);
   badge.className   = 'phase-badge ' + phaseClass(state.phase);
+  
+  // Reputation Badge
+  const repBadge = document.getElementById('rep-score');
+  if (repBadge) {
+      repBadge.textContent = (state.reputation_score || 0).toFixed(3);
+  }
 
   // Wallet Balance (Specifically for THIS browser user)
   await refreshTopbarBalance();

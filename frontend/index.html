@@ -28,11 +28,16 @@
     </div>
     <div class="topbar-right">
       <div class="phase-badge" id="phase-badge">—</div>
-      <div class="wallet-chip" id="wallet-chip">
-        <span class="wallet-icon">◈</span>
+      <div class="wallet-badge" id="wallet-badge">
+        <span class="wallet-icon">◎</span>
         <span id="wallet-balance">0.00</span>
         <span class="wallet-unit">POR</span>
         <span class="wallet-staked" id="wallet-staked-chip"></span>
+      </div>
+      <div class="wallet-badge" id="rep-badge" style="background: rgba(30,30,36,0.6); border-color: #333;">
+        <span class="wallet-icon" style="color: #ffd700;">★</span>
+        <span id="rep-score">0.05</span>
+        <span class="wallet-unit">REP</span>
       </div>
       <button class="refresh-btn" id="refresh-btn" title="Refresh">⟳</button>
     </div>
@@ -284,8 +289,13 @@
           <div class="empty-state">Loading phase info...</div>
         </div>
       </section>
-
     </div><!-- /content -->
+
+    <!-- ── Audit Sidebar ───────────────────────────────────────────── -->
+    <aside class="audit-panel" style="width: 380px; min-width: 380px; border-left: 1px solid var(--border); background: var(--bg-1); display: flex; flex-direction: column; overflow: hidden;">
+      <iframe src="/static/audit.html" style="width: 100%; height: 100%; border: none;"></iframe>
+    </aside>
+
   </main>
 
   <script src="/static/js/wallet_manager.js"></script>

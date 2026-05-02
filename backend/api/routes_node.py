@@ -19,6 +19,7 @@ async def node_state():
         "node_id": node_id,
         "public_key": node["public_key"],
         "phase": phase,
+        "reputation_score": await reputation.get_score(node_id),
         **flags,
         "peers_count": len(peers),
         "chain_height": len(chain),

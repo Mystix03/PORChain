@@ -30,16 +30,29 @@ async def select_proposer(seed: str | None = None) -> str | None:
     if total == 0:
         return random.choice(list(scores.keys()))
 
+    from modules import audit
+    details = "Full Validator Reputations:\n"
+    for n_id, s in scores.items():
+        details += f"Node {n_id[:8]}... → {s:.3f}\n"
+    details += f"\nTotal Reputation = {total:.3f}\n"
+    
     # Deterministic weighted random using seed
     rng_seed = int(hashlib.sha256((seed or str(time.time())).encode()).hexdigest(), 16)
     rng = random.Random(rng_seed)
     r = rng.uniform(0, total)
     cumulative = 0.0
+    selected = None
     for node_id, score in scores.items():
-        cumulative += score
-        if r <= cumulative:
-            return node_id
-    return list(scores.keys())[-1]
+        if selected is None:
+            cumulative += score
+            if r <= cumulative:
+                selected = node_id
+        
+        prob = (score / total) * 100
+        details += f"Node {node_id[:8]} Proposal Probability = {prob:.1f}%\n"
+        
+    audit.log_event("PROPOSER", f"Selected Proposer: {selected[:8]}...", details)
+    return selected or list(scores.keys())[-1]
 
 
 # ── Block Proposal Flow ───────────────────────────────────────────────────────
@@ -103,6 +116,9 @@ async def receive_block_proposal(block: dict, proposer_id: str) -> bool:
     _proposed_blocks[block.get("hash")] = block
 
     if my_phase in ("PHASE_3", "FULL_NODE"):
+        # Update OUR OWN reputation immediately when we cast a vote
+        await reputation.update(my_id, honest=True)
+        
         # Broadcast our vote to everyone
         await networking.broadcast("BLOCK_VOTE", {
             "block_hash": block.get("hash"),
@@ -111,6 +127,17 @@ async def receive_block_proposal(block: dict, proposer_id: str) -> bool:
         })
         # Record our own vote locally
         await receive_block_vote(block.get("hash"), my_id, block)
+
+        # If we are PHASE_3, record this as an honest round
+        if my_phase == "PHASE_3":
+            from modules import coldstart
+            result = await coldstart.record_honest_round(my_id)
+            if result.get("phase") == "FULL_NODE":
+                # Broadcast our own graduation
+                await networking.broadcast("PHASE_UPDATE", {
+                    "node_id": my_id,
+                    "phase": "FULL_NODE",
+                })
 
     return True
 
@@ -141,8 +168,21 @@ async def receive_block_vote(block_hash: str, voter_id: str, block: dict | None 
         if not final_block:
             return False
 
+        # Ensure we haven't already finalized this block (prevents log spam and duplicate appends)
+        last_b = await blockchain.last_block()
+        if last_b and final_block.get("index", 0) <= last_b.get("index", 0):
+            return True
+
+        from modules import audit
+        details = f"Block #{final_block.get('index')} Proposed by Node {final_block.get('proposer', '')[:8]}...\n\nValidator Votes:\n"
+        for v_id in _acceptance_votes[block_hash]:
+            details += f"Node {v_id[:8]}... → APPROVE\n"
+        details += f"\nConsensus:\n{required}/{full_node_count} Threshold Reached\nBLOCK FINALIZED"
+        audit.log_event("CONSENSUS", f"Block #{final_block.get('index')} Finalized", details)
+
         success = await blockchain.append_block(final_block)
         if success:
+            voters = set(_acceptance_votes[block_hash])
             del _acceptance_votes[block_hash]
             _proposed_blocks.pop(block_hash, None)
 
@@ -151,24 +191,27 @@ async def receive_block_vote(block_hash: str, voter_id: str, block: dict | None 
             global _pending_events
             _pending_events = [e for e in _pending_events if e.get("tx_id") not in block_tx_ids]
 
-            # Credit proposer reputation
-            await reputation.update(final_block["proposer"], honest=True)
-
             # Broadcast BLOCK_FINALIZED so Phase 1/2 nodes can also apply it
             await networking.broadcast("BLOCK_FINALIZED", {"block": final_block})
 
-            # Credit honest rounds to ALL Phase 3 voters, not just the local node
+            # Credit honest participation in background — never block finalization
+            # Note: each node already updated its OWN reputation in receive_block_proposal.
+            # Here we only need to handle Phase 3 graduation for OTHER nodes.
+            import asyncio
             from modules import coldstart
-            for voter_node_id in _acceptance_votes.get(block_hash, set()):
-                voter_phase = await registry.get_phase(voter_node_id)
-                if voter_phase == "PHASE_3":
-                    result = await coldstart.record_honest_round(voter_node_id)
-                    # If they just graduated, broadcast so all peers know
-                    if result.get("phase") == "FULL_NODE":
-                        await networking.broadcast("PHASE_UPDATE", {
-                            "node_id": voter_node_id,
-                            "phase": "FULL_NODE",
-                        })
+            from modules import identity as ident
+            my_id = ident.get()["node_id"]
+            
+            async def _credit_voters(voters_snap, block_snap, my_id_snap):
+                for voter_node_id in voters_snap:
+                    if voter_node_id == my_id_snap:
+                        continue  # We already updated our own rep in receive_block_proposal
+                    voter_phase = await registry.get_phase(voter_node_id)
+                    if voter_phase == "PHASE_3":
+                        # Track their honest rounds in our local registry
+                        await registry.increment_honest_rounds(voter_node_id)
+
+            asyncio.create_task(_credit_voters(voters, final_block, my_id))
 
             return True
     return False

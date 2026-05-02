@@ -48,7 +48,7 @@ async def lifespan(app: FastAPI):
             log.info("🌱 Registered as bootstrap FULL_NODE")
         else:
             await registry.register(node["node_id"], node["public_key"], phase="PHASE_1")
-            await reputation.set_initial(node["node_id"], 0.0)
+            await reputation.set_initial(node["node_id"])
             log.info("🌱 Registered as new guest node (PHASE_1)")
 
     # 3. Local Discovery (Magic Join)
@@ -129,6 +129,8 @@ app.include_router(routes_tasks.router, tags=["ColdStart"])
 app.include_router(routes_vouch.router, tags=["ColdStart"])
 app.include_router(routes_wallet.router, tags=["Wallet"])
 app.include_router(routes_broadcast.router, tags=["P2P"])
+from api import routes_audit
+app.include_router(routes_audit.router, tags=["Audit"])
 
 # Serve frontend
 _frontend = pathlib.Path(__file__).parent.parent / "frontend"

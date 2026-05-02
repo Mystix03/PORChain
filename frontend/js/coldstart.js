@@ -58,9 +58,9 @@ function _renderPhaseProgress(phase) {
   const idx    = phases.indexOf(phase);
 
   const steps = [
-    { key: 'PHASE_1', icon: '📋', label: 'Probation' },
+    { key: 'PHASE_1', icon: '📋', label: 'Candidate' },
     { key: 'PHASE_2', icon: '🤝', label: 'Vouching'  },
-    { key: 'PHASE_3', icon: '🎓', label: 'Graduated' },
+    { key: 'PHASE_3', icon: '🎓', label: 'Probationary' },
     { key: 'FULL_NODE', icon: '⬡', label: 'Full Node' },
   ];
 
@@ -163,22 +163,27 @@ function _renderPhase2(status, myAddr) {
         </div>
       </div>
 
-      ${vouch ? `
+      ${vouch && vouch.length > 0 ? `
         <div class="cs-vouch-status">
-          <div class="cs-vouch-row">
-            <span>Voucher</span>
-            <code>${_short(vouch.voucher_id)}</code>
-          </div>
-          <div class="cs-vouch-row">
-            <span>Stake</span>
-            <strong>${(vouch.stake_amount || 0).toFixed(4)} POR</strong>
-          </div>
-          <div class="cs-vouch-row">
-            <span>Status</span>
-            <span class="badge-${vouch.status?.toLowerCase()}">${vouch.status}</span>
-          </div>
+          <h4>Received Vouches (${vouch.length} / 2 required)</h4>
+          ${vouch.map(v => `
+            <div style="border-top: 1px solid var(--border-color); padding-top: 8px; margin-top: 8px;">
+              <div class="cs-vouch-row">
+                <span>Voucher</span>
+                <code>${_short(v.voucher_id)}</code>
+              </div>
+              <div class="cs-vouch-row">
+                <span>Stake</span>
+                <strong>${(v.stake_amount || 0).toFixed(4)} POR</strong>
+              </div>
+              <div class="cs-vouch-row">
+                <span>Status</span>
+                <span class="badge-${v.status?.toLowerCase()}">${v.status}</span>
+              </div>
+            </div>
+          `).join('')}
         </div>
-      ` : `<div class="cs-waiting"><div class="spinner"></div> Waiting for a voucher...</div>`}
+      ` : `<div class="cs-waiting"><div class="spinner"></div> Waiting for vouchers (0 / 2 required)...</div>`}
     </div>
   `;
 }
@@ -330,7 +335,7 @@ async function _loadAndRenderTasks(myAddr) {
             ${t.type === 'SIGN_CHALLENGE'
               ? `<div class="cs-task-note">✍ This task will be auto-signed with your wallet key.</div>`
               : `<input type="text" class="input-field cs-task-answer" data-task="${t.task_id}"
-                        placeholder="Your answer…" />`
+                        placeholder="Computing…" readonly />`
             }
           </div>
         `).join('')}
@@ -340,6 +345,17 @@ async function _loadAndRenderTasks(myAddr) {
         <div class="form-msg" id="cs-task-msg"></div>
       </div>
     `;
+
+    // Auto-compute SHA256 for HASH_PREIMAGE and VERIFY_HASH tasks
+    for (const t of tasks) {
+      if (t.type === 'HASH_PREIMAGE' || t.type === 'VERIFY_HASH') {
+        const input = document.querySelector(`[data-task="${t.task_id}"]`);
+        if (input) {
+          const hash = await _sha256(t.challenge);
+          input.value = hash;
+        }
+      }
+    }
 
     document.getElementById('cs-submit-tasks-btn')?.addEventListener('click',
       () => _submitTasks(myAddr, tasks));
@@ -492,14 +508,24 @@ function _short(id) {
   return id.slice(0, 10) + '…' + id.slice(-6);
 }
 
+async function _sha256(str) {
+  const buf = await crypto.subtle.digest(
+    'SHA-256',
+    new TextEncoder().encode(str)
+  );
+  return Array.from(new Uint8Array(buf))
+    .map(b => b.toString(16).padStart(2, '0'))
+    .join('');
+}
+
 function _taskIcon(type) {
   const map = { HASH_PREIMAGE: '🔐', SIGN_CHALLENGE: '✍', VERIFY_HASH: '🔍' };
   return map[type] || '❓';
 }
 
 function _phaseLabel(phase) {
-  const map = { PHASE_1: 'Phase 1', PHASE_2: 'Phase 2', PHASE_3: 'Phase 3',
-                FULL_NODE: 'Full Node', BANNED: 'Banned', UNKNOWN: 'Unknown' };
+  const map = { PHASE_1: 'Candidate Node', PHASE_2: 'Phase 1 Complete', PHASE_3: 'Probationary Validator',
+                FULL_NODE: 'Full Validator', BANNED: 'Banned', UNKNOWN: 'Unknown' };
   return map[phase] || phase || '—';
 }
 
