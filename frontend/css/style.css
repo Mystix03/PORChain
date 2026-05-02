@@ -1131,6 +1131,9 @@ input { font-family: inherit; }
   cursor: pointer;
   transition: filter var(--transition), transform var(--transition);
   letter-spacing: .3px;
+  position: relative;
+  z-index: 10;
+  pointer-events: auto;
 }
 .sim-trigger-btn:hover  { filter: brightness(1.15); transform: translateY(-1px); }
 .sim-trigger-btn:active { transform: translateY(0); filter: brightness(.95); }

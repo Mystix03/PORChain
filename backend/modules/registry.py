@@ -36,7 +36,17 @@ async def set_phase(node_id: str, phase: str) -> None:
     reg = await storage.read_or_default(_REG_FILE, {})
     if node_id in reg:
         reg[node_id]["phase"] = phase
-        await storage.write(_REG_FILE, reg)
+    else:
+        # Auto-register if we get a phase update for an unknown node
+        # We might not have the public key yet, so we'll need to sync it later or use a placeholder
+        reg[node_id] = {
+            "node_id": node_id,
+            "public_key": "UNKNOWN_SYNC_NEEDED",
+            "phase": phase,
+            "honest_rounds": 0,
+            "voucher": None,
+        }
+    await storage.write(_REG_FILE, reg)
 
 
 async def get_phase(node_id: str) -> str:

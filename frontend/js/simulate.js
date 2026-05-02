@@ -234,34 +234,79 @@ function _renderSimReport(d) {
 }
 
 // ── Button Injection ──────────────────────────────────────────────────────────
+// We want this button on BOTH the Dashboard and the ColdStart Full Node panel.
 
 function injectSimulateButton(state) {
-  const grid = document.getElementById('stat-grid');
-  if (!grid) return;
+  // 1. ColdStart Panel Injection (if it exists)
+  const csAdmin = document.getElementById('cs-penalize-btn')?.parentElement;
+  if (csAdmin) _createBtn(csAdmin, 'sim-btn-cs', state, true);
+}
 
-  const existing = document.getElementById('sim-btn-card');
-  
-  // ONLY show for FULL_NODE
+function _createBtn(parent, id, state, asForm = false) {
   if (state?.phase !== 'FULL_NODE') {
-    if (existing) existing.remove();
+    document.getElementById(id)?.remove();
     return;
   }
+  if (document.getElementById(id)) return;
 
-  if (existing) return;
+  const wrapper = document.createElement('div');
+  wrapper.id = id;
+  
+  if (asForm) {
+      // In ColdStart send-form style
+      wrapper.className = 'send-form';
+      wrapper.style.marginTop = '16px';
+      wrapper.innerHTML = `
+        <div class="field-label" style="color:var(--accent-r)">DANGER ZONE: Test Network Resilience</div>
+        <button class="sim-trigger-btn" style="width:100%; justify-content:center;">
+          <span class="sim-trigger-icon">☠</span>
+          Simulate Malicious Block (Attacker = This Node)
+        </button>
+      `;
+  } else {
+      // In Dashboard stat-card style
+      wrapper.className = 'stat-card sim-btn-card';
+      wrapper.innerHTML = `
+        <div class="stat-label">Threat Simulation</div>
+        <button class="sim-trigger-btn" title="Simulate a malicious block proposal from this node">
+          <span class="sim-trigger-icon">⚠</span>
+          Simulate Attack
+        </button>
+      `;
+  }
 
-  const card = document.createElement('div');
-  card.className = 'stat-card sim-btn-card';
-  card.id = 'sim-btn-card';
-  card.innerHTML = `
-    <div class="stat-label">Threat Simulation</div>
-    <button class="sim-trigger-btn" id="sim-trigger-btn" title="Simulate a malicious block proposal">
-      <span class="sim-trigger-icon">⚠</span>
-      Simulate Malicious Block
-    </button>
-  `;
-  grid.appendChild(card);
+  parent.appendChild(wrapper);
+  
+  // Explicitly bind the click to the button inside this wrapper
+  const btn = wrapper.querySelector('button');
+  btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      runMaliciousSimulation(state.node_id);
+  });
+}
 
-  document.getElementById('sim-trigger-btn').addEventListener('click', runMaliciousSimulation);
+async function runMaliciousSimulation(attackerId = null) {
+  _injectSimulateModal();
+  _openSimModal();
+
+  try {
+    const r = await fetch(`${BASE_URL}/simulate/malicious-block`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ node_id: attackerId }),
+    });
+    const data = await r.json();
+
+    if (!r.ok) {
+      _renderSimError(data.detail || 'Simulation failed');
+      return;
+    }
+
+    _renderSimReport(data);
+  } catch (e) {
+    _renderSimError('Network error — is the node running?');
+  }
 }
 
 // Auto-inject modal on DOM ready

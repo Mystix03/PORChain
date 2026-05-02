@@ -263,11 +263,15 @@ async def validate_block(block: dict) -> bool:
     if not await _verify_transactions(block.get("events", []), chain):
         return False
 
-    # 6. Proposer signature (need proposer's pubkey from registry)
+    # 6. Proposer signature & status (need proposer's pubkey from registry)
     from modules import registry as reg
     proposer_id = block.get("proposer")
     node_info = await reg.get_node(proposer_id)
     if node_info:
+        # Security Gating: BANNED nodes cannot propose valid blocks
+        if node_info.get("phase") == "BANNED":
+            return False
+        
         if not identity.verify(block["hash"], block["signature"], node_info["public_key"]):
             return False
 

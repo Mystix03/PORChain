@@ -30,14 +30,21 @@ async def simulate_malicious_block(body: dict = {}):
         if all_nodes[attacker_id]["phase"] == "BANNED":
             raise HTTPException(status_code=400, detail="Node is already BANNED")
     else:
-        # Auto-pick: prefer PHASE_3 (probationary), fallback to FULL_NODE
-        for phase in ("PHASE_3", "FULL_NODE", "PHASE_2", "PHASE_1"):
-            for nid, info in all_nodes.items():
-                if info["phase"] == phase and nid != identity.get()["node_id"]:
-                    attacker_id = nid
+        # Auto-pick: prefer self if it's a FULL_NODE (user's intent), 
+        # else prefer PHASE_3 (probationary), fallback to others
+        my_id = identity.get()["node_id"]
+        my_info = all_nodes.get(my_id)
+        
+        if my_info and my_info["phase"] == "FULL_NODE":
+            attacker_id = my_id
+        else:
+            for phase in ("PHASE_3", "FULL_NODE", "PHASE_2", "PHASE_1"):
+                for nid, info in all_nodes.items():
+                    if info["phase"] == phase: # allowed to be self now
+                        attacker_id = nid
+                        break
+                if attacker_id:
                     break
-            if attacker_id:
-                break
 
     if not attacker_id:
         raise HTTPException(status_code=400, detail="No eligible node to simulate attack")

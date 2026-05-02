@@ -34,13 +34,33 @@ async def get() -> dict:
 
 
 async def balance(address: str = None) -> dict:
-    """Return the balance and staked amount for an address."""
+    """Return the balance and staked amount for an address, including pending mempool TXs."""
     if address is None:
         address = identity.get()["node_id"]
     
-    from modules import blockchain
+    from modules import blockchain, consensus
     chain = await blockchain.get_chain()
-    return blockchain.calculate_balance(address, chain)
+    state = blockchain.calculate_balance(address, chain)
+
+    # Apply pending transactions for real-time reactivity
+    for ev in consensus._pending_events:
+        if ev.get("from") == address or ev.get("to") == address:
+            type_ = ev.get("type")
+            amt = ev.get("amount", 0.0)
+            
+            if type_ == "SEND":
+                if ev.get("from") == address: state["balance"] -= amt
+                if ev.get("to") == address:   state["balance"] += amt
+            elif type_ == "STAKE" and ev.get("from") == address:
+                state["balance"] -= amt
+                state["staked"] += amt
+            elif type_ == "UNSTAKE" and ev.get("from") == address:
+                state["staked"] -= amt
+                state["balance"] += amt
+            elif type_ == "SLASH" and ev.get("from") == address:
+                state["staked"] -= amt
+
+    return state
 
 
 async def history(address: str = None) -> list:
@@ -81,10 +101,14 @@ async def history(address: str = None) -> list:
     return txs
 
 
-# ── Transactions ──────────────────────────────────────────────────────────────
-
 async def send(to_address: str, amount: float) -> dict:
     """Create a signed TX. Balance is validated by the network upon block creation."""
+    # ── Security Gating: No BANNED nodes ──────────────────────────────────────
+    from modules import registry
+    my_id = identity.get()["node_id"]
+    if await registry.get_phase(my_id) == "BANNED":
+        raise ValueError("BANNED nodes cannot send tokens")
+
     if amount <= 0:
         raise ValueError("Amount must be positive")
     

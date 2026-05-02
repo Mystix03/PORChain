@@ -48,6 +48,11 @@ async function renderColdStart(state) {
     // Bind dynamic handlers after rendering
     _bindHandlers(phase, myAddr, status);
 
+    // Threat Simulation (FULL_NODE only)
+    if (typeof injectSimulateButton === 'function') {
+        injectSimulateButton({ ...status, phase, node_id: myAddr });
+    }
+
   } catch (e) {
     container.innerHTML = `<div class="empty-state">⚠ Could not load ColdStart data. Is the node running?</div>`;
   }

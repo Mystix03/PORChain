@@ -120,6 +120,9 @@ async def submit_task_results(node_id: str, submissions: list[dict]) -> dict:
     Evaluate submitted task results.
     Returns: {score, passed, phase}
     """
+    if await registry.get_phase(node_id) == "BANNED":
+        return {"error": "BANNED nodes cannot submit tasks"}
+
     tasks_store = await storage.read_or_default(_TASKS_FILE, {})
     if node_id not in tasks_store:
         return {"error": "No tasks assigned for this node"}
@@ -159,6 +162,12 @@ async def vouch(voucher_id: str, target_id: str) -> dict:
     Voucher stakes tokens for target node.
     Returns vouch record or error.
     """
+    # ── Security Gating: No BANNED nodes ──────────────────────────────────────
+    if await registry.get_phase(voucher_id) == "BANNED":
+        return {"error": "BANNED nodes cannot vouch"}
+    if await registry.get_phase(target_id) == "BANNED":
+        return {"error": "Target node is BANNED"}
+
     # Check voucher eligibility
     if not await reputation.is_eligible_to_vouch(voucher_id):
         return {"error": "Voucher reputation too low"}
@@ -169,9 +178,22 @@ async def vouch(voucher_id: str, target_id: str) -> dict:
         # Proactive sync: maybe we missed the JOIN or PHASE_UPDATE broadcast
         await registry.sync_from_peers()
         phase = await registry.get_phase(target_id)
-
     if phase != "PHASE_2":
         return {"error": f"Target node is not in Phase 2 (currently {phase})"}
+
+    if voucher_id == target_id:
+        return {"error": "You cannot vouch for yourself"}
+
+    # ── Duplicate Check ──────────────────────────────────────────────────────
+    vouches = await storage.read_or_default(_VOUCHES_FILE, {})
+    target_vouches = vouches.get(target_id, [])
+    if any(v.get("voucher_id") == voucher_id and v.get("status") == "ACTIVE" for v in target_vouches):
+        return {"error": f"Node {voucher_id[:8]} already has an active vouch for this target"}
+
+    # Total vouch count check
+    active_count = len([v for v in target_vouches if v.get("status") == "ACTIVE"])
+    if active_count >= getattr(config, "VOUCHES_REQUIRED", 2):
+        return {"error": "Target node already has enough active vouches"}
 
     # Calculate stake: Ensure we use the most up-to-date score and config
     voucher_score = await reputation.get_score(voucher_id)
@@ -221,28 +243,37 @@ async def receive_vouch(vouch_record: dict) -> dict:
     if target_id not in vouches:
         vouches[target_id] = []
         
-    # Prevent double-vouching by the same node
-    if any(v.get("voucher_id") == voucher_id for v in vouches[target_id]):
-        return {"error": "Node already vouched"}
+    # Idempotency: If this exact vouch (same TX) is already recorded, just return it
+    existing = next((v for v in vouches[target_id] if v.get("stake_tx") == vouch_record.get("stake_tx")), None)
+    if existing:
+        return existing
+
+    # Prevent double-vouching by the same node (if active)
+    if any(v.get("voucher_id") == voucher_id and v.get("status") == "ACTIVE" for v in vouches[target_id]):
+        return {"error": f"Node {voucher_id[:8]} already has an active vouch for this target"}
         
     vouches[target_id].append(vouch_record)
     await storage.write(_VOUCHES_FILE, vouches)
 
-    # Check if we have enough vouches to advance to Phase 3
+    # Check if we have enough active vouches to advance to Phase 3
+    active_vouches = [v for v in vouches[target_id] if v.get("status") == "ACTIVE"]
     needed = getattr(config, "VOUCHES_REQUIRED", 2)
-    if len(vouches[target_id]) >= needed:
-        await registry.set_phase(target_id, "PHASE_3")
-        await registry.set_voucher(target_id, voucher_id)
-        
-        # Broadcast phase update if advancing (prevent loops by only having the final voucher broadcast)
-        from modules import identity as ident
-        my_id = ident.get()["node_id"]
-        if my_id == voucher_id:
-            from modules import networking
-            await networking.broadcast("PHASE_UPDATE", {
-                "node_id": target_id,
-                "phase": "PHASE_3",
-            })
+    
+    if len(active_vouches) >= needed:
+        current_phase = await registry.get_phase(target_id)
+        if current_phase == "PHASE_2":
+            await registry.set_phase(target_id, "PHASE_3")
+            await registry.set_voucher(target_id, voucher_id)
+            
+            # Broadcast phase update if advancing (prevent loops by only having the final voucher broadcast)
+            from modules import identity as ident
+            my_id = ident.get()["node_id"]
+            if my_id == voucher_id:
+                from modules import networking
+                await networking.broadcast("PHASE_UPDATE", {
+                    "node_id": target_id,
+                    "phase": "PHASE_3",
+                })
 
     return vouch_record
 

@@ -55,6 +55,11 @@ async def receive_broadcast(request: Request, msg: dict, bg_tasks: BackgroundTas
     elif msg_type == "TX":
         tx = payload.get("tx")
         if tx:
+            # ── Security Gating: No BANNED nodes ──────────────────────────────
+            sender_id = tx.get("from")
+            if await registry.get_phase(sender_id) == "BANNED":
+                return {"status": "rejected", "reason": "BANNED_SENDER"}
+
             # 1. Verify the Transaction Signature before adding to mempool
             if await wallet.receive(tx):
                 consensus.add_pending_event(tx)
