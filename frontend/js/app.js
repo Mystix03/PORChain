@@ -13,6 +13,7 @@ async function init() {
     
     // 2. Load Node State (Network Height, Peers, etc.)
     _state = await api.getNodeState();
+    window._config = await api.getConfig();
     hideSplash();
     
     // 3. Update UI with THIS browser's address
@@ -107,6 +108,11 @@ async function updateDashboard(state) {
   // Identity
   document.getElementById('full-node-id').textContent  = myAddr || '—';
   document.getElementById('full-pubkey').textContent    = myPub || '—';
+
+  // Threat Simulation (FULL_NODE only)
+  if (typeof injectSimulateButton === 'function') {
+      injectSimulateButton(state);
+  }
 }
 
 function setElig(id, val) {

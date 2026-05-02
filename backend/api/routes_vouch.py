@@ -19,17 +19,22 @@ async def submit_vouch(body: dict):
         raise HTTPException(status_code=400, detail="Cannot vouch for yourself")
 
     result = await coldstart.vouch(my_id, target_id)
-    if "error" in result:
-        raise HTTPException(status_code=403, detail=result["error"])
+    if not result or "error" in result:
+        raise HTTPException(status_code=403, detail=result.get("error", "Vouch failed"))
+    
+    # Check if the inner record contains an error
+    record = result.get("record", {})
+    if isinstance(record, dict) and "error" in record:
+         raise HTTPException(status_code=403, detail=record["error"])
 
-    # Broadcast the phase update so the target node (and network) knows it was vouched for
-    from modules import networking
-    await networking.broadcast("PHASE_UPDATE", {
-        "node_id": target_id,
-        "phase": "PHASE_3"
-    })
+    # Mine the stake TX on-chain
+    stake_tx = result.get("tx")
+    if stake_tx:
+        from modules import consensus, networking
+        consensus.add_pending_event(stake_tx)
+        await networking.broadcast("TX", {"tx": stake_tx})
 
-    return result
+    return record
 
 
 @router.get("/vouch/status")

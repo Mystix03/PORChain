@@ -67,3 +67,43 @@ async def all_nodes() -> dict:
 async def full_nodes() -> list:
     reg = await storage.read_or_default(_REG_FILE, {})
     return [n for n in reg.values() if n["phase"] == "FULL_NODE"]
+async def sync_from_peers() -> None:
+    """Fetch registry data from peers and merge with local data."""
+    from modules import networking
+    peers = await networking.load_peers()
+    if not peers:
+        return
+
+    import httpx
+    async with httpx.AsyncClient(timeout=2.0) as client:
+        for peer in peers:
+            try:
+                r = await client.get(f"{peer}/node/registry")
+                if r.status_code == 200:
+                    remote_nodes = r.json().get("nodes", {})
+                    local_reg = await storage.read_or_default(_REG_FILE, {})
+                    
+                    changed = False
+                    for nid, info in remote_nodes.items():
+                        if nid not in local_reg:
+                            local_reg[nid] = info
+                            changed = True
+                        else:
+                            # Update phase if remote is further ahead
+                            remote_p = info.get("phase", "PHASE_1")
+                            local_p = local_reg[nid].get("phase", "PHASE_1")
+                            if phase_index(remote_p) > phase_index(local_p):
+                                local_reg[nid]["phase"] = remote_p
+                                changed = True
+                    
+                    if changed:
+                        await storage.write(_REG_FILE, local_reg)
+                    break # Successful sync from one peer is usually enough
+            except Exception:
+                continue
+
+# Helper for phase comparison
+PHASES = ["UNKNOWN", "PHASE_1", "PHASE_2", "PHASE_3", "FULL_NODE", "BANNED"]
+def phase_index(p: str) -> int:
+    try: return PHASES.index(p)
+    except: return 0

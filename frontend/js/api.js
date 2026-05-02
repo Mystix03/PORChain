@@ -124,4 +124,8 @@ const api = {
     const r = await fetch(url);
     return r.json();
   },
+  async getConfig() {
+    const r = await fetch(`${BASE_URL}/config`);
+    return r.json();
+  },
 };

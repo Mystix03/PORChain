@@ -16,7 +16,7 @@ import pathlib
 
 import config
 from modules import identity, wallet, blockchain, reputation, registry, networking, consensus
-from api import routes_node, routes_chain, routes_tasks, routes_vouch, routes_wallet, routes_broadcast
+from api import routes_node, routes_chain, routes_tasks, routes_vouch, routes_wallet, routes_broadcast, routes_simulate
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 log = logging.getLogger("por-chain")
@@ -131,6 +131,7 @@ app.include_router(routes_wallet.router, tags=["Wallet"])
 app.include_router(routes_broadcast.router, tags=["P2P"])
 from api import routes_audit
 app.include_router(routes_audit.router, tags=["Audit"])
+app.include_router(routes_simulate.router, tags=["Simulation"])
 
 # Serve frontend
 _frontend = pathlib.Path(__file__).parent.parent / "frontend"

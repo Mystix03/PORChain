@@ -138,6 +138,11 @@ async def submit_task_results(node_id: str, submissions: list[dict]) -> dict:
 
     if passed:
         await registry.set_phase(node_id, "PHASE_2")
+        from modules import networking
+        await networking.broadcast("PHASE_UPDATE", {
+            "node_id": node_id,
+            "phase": "PHASE_2"
+        })
 
     tasks_store[node_id]["results"] = {"score": score, "passed": passed}
     await storage.write(_TASKS_FILE, tasks_store)
@@ -160,12 +165,24 @@ async def vouch(voucher_id: str, target_id: str) -> dict:
 
     # Check target is in Phase 2
     phase = await registry.get_phase(target_id)
+    if phase == "UNKNOWN":
+        # Proactive sync: maybe we missed the JOIN or PHASE_UPDATE broadcast
+        await registry.sync_from_peers()
+        phase = await registry.get_phase(target_id)
+
     if phase != "PHASE_2":
         return {"error": f"Target node is not in Phase 2 (currently {phase})"}
 
-    # Calculate stake
+    # Calculate stake: Ensure we use the most up-to-date score and config
     voucher_score = await reputation.get_score(voucher_id)
-    stake_amount = voucher_score * config.VOUCH_DELTA * 100  # scaled to token units
+    
+    # DYNAMIC: Use 10% of current reputation or 0.1 default
+    v_score = float(voucher_score) if (voucher_score is not None and isinstance(voucher_score, (int, float)) and voucher_score > 0) else 0.7
+    v_delta = float(getattr(config, "VOUCH_DELTA", 0.1))
+    
+    # Formula: reputation * delta * 100 tokens. 
+    # Hardcoded minimum of 10.0 to ensure it's never zero and provides visual feedback.
+    stake_amount = float(max(10.0, v_score * v_delta * 100.0))
 
     # Stake from voucher's wallet
     try:
@@ -188,7 +205,8 @@ async def vouch(voucher_id: str, target_id: str) -> dict:
     from modules import networking
     await networking.broadcast("VOUCH", {"vouch_record": vouch_record})
 
-    return await receive_vouch(vouch_record)
+    record = await receive_vouch(vouch_record)
+    return {"record": record, "tx": stake_tx}
 
 
 async def receive_vouch(vouch_record: dict) -> dict:
@@ -268,25 +286,34 @@ async def penalize_malicious(node_id: str) -> dict:
     await reputation.update(node_id, honest=False)
 
     vouches = await storage.read_or_default(_VOUCHES_FILE, {})
-    vouch = vouches.get(node_id)
-    result = {"node_id": node_id, "phase": "BANNED"}
+    vouch_list = vouches.get(node_id, [])
+    if isinstance(vouch_list, dict):
+        vouch_list = [vouch_list] # Compat
+        
+    result = {"node_id": node_id, "phase": "BANNED", "slash_txs": []}
 
-    if vouch and vouch["status"] == "ACTIVE":
-        try:
-            slash_tx = await wallet.slash(vouch["stake_amount"])
-            # ✅ Mine the slash TX on-chain (was previously a dead-end)
-            from modules import consensus
-            consensus.add_pending_event(slash_tx)
-            from modules import networking
-            await networking.broadcast("TX", {"tx": slash_tx})
-            result["slash_tx"] = slash_tx["tx_id"]
-        except Exception:
-            pass
-        vouches[node_id]["status"] = "SLASHED"
+    changed = False
+    for v in vouch_list:
+        if isinstance(v, dict) and v.get("status") == "ACTIVE":
+            try:
+                slash_tx = await wallet.slash(v["stake_amount"])
+                # ✅ Mine the slash TX on-chain
+                from modules import consensus
+                consensus.add_pending_event(slash_tx)
+                from modules import networking
+                await networking.broadcast("TX", {"tx": slash_tx})
+                result["slash_txs"].append(slash_tx["tx_id"])
+            except Exception:
+                pass
+            v["status"] = "SLASHED"
+            changed = True
+
+            # Also penalize voucher's reputation
+            if v.get("voucher_id"):
+                await reputation.update(v["voucher_id"], honest=False)
+
+    if changed:
         await storage.write(_VOUCHES_FILE, vouches)
-
-        # Also penalize voucher's reputation
-        await reputation.update(vouch["voucher_id"], honest=False)
 
     # Broadcast phase change so all peers update their registry
     await _broadcast_phase_update(node_id, "BANNED")

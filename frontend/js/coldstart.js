@@ -27,8 +27,11 @@ async function renderColdStart(state) {
     const phase  = status.phase || 'UNKNOWN';
 
     // Prevent wiping DOM every 3 seconds if phase hasn't changed
+    // EXCEPT for PHASE_2 (vouch list) and PHASE_3 (rep bar) and FULL_NODE (node list)
     if (phase === _csCurrentPhase) {
-        if (phase === 'PHASE_3') {
+        if (phase === 'PHASE_2') {
+            _refreshVouchList(myAddr, status);
+        } else if (phase === 'PHASE_3') {
             const rep = status.reputation_score || 0;
             const repPct = Math.min(100, (rep * 100)).toFixed(0);
             const bar = document.querySelector('.cs-rep-bar');
@@ -163,27 +166,29 @@ function _renderPhase2(status, myAddr) {
         </div>
       </div>
 
-      ${vouch && vouch.length > 0 ? `
-        <div class="cs-vouch-status">
-          <h4>Received Vouches (${vouch.length} / 2 required)</h4>
-          ${vouch.map(v => `
-            <div style="border-top: 1px solid var(--border-color); padding-top: 8px; margin-top: 8px;">
-              <div class="cs-vouch-row">
-                <span>Voucher</span>
-                <code>${_short(v.voucher_id)}</code>
+      <div class="cs-vouch-status-wrap">
+        ${vouch && vouch.length > 0 ? `
+          <div class="cs-vouch-status">
+            <h4>Received Vouches (${vouch.length} / ${window._config?.VOUCHES_REQUIRED || 2} required)</h4>
+            ${vouch.map(v => `
+              <div style="border-top: 1px solid var(--border-color); padding-top: 8px; margin-top: 8px;">
+                <div class="cs-vouch-row">
+                  <span>Voucher</span>
+                  <code>${_short(v.voucher_id)}</code>
+                </div>
+                <div class="cs-vouch-row">
+                  <span>Stake</span>
+                  <strong>${(v.stake_amount || 0).toFixed(4)} POR</strong>
+                </div>
+                <div class="cs-vouch-row">
+                  <span>Status</span>
+                  <span class="badge-${v.status?.toLowerCase()}">${v.status}</span>
+                </div>
               </div>
-              <div class="cs-vouch-row">
-                <span>Stake</span>
-                <strong>${(v.stake_amount || 0).toFixed(4)} POR</strong>
-              </div>
-              <div class="cs-vouch-row">
-                <span>Status</span>
-                <span class="badge-${v.status?.toLowerCase()}">${v.status}</span>
-              </div>
-            </div>
-          `).join('')}
-        </div>
-      ` : `<div class="cs-waiting"><div class="spinner"></div> Waiting for vouchers (0 / 2 required)...</div>`}
+            `).join('')}
+          </div>
+        ` : `<div class="cs-waiting"><div class="spinner"></div> Waiting for vouchers (0 / ${window._config?.VOUCHES_REQUIRED || 2} required)...</div>`}
+      </div>
     </div>
   `;
 }
@@ -410,6 +415,43 @@ async function _submitTasks(myAddr, tasks) {
 }
 
 
+async function _refreshVouchList(myAddr, status) {
+  const container = document.querySelector('.cs-vouch-status-wrap');
+  if (!container) return;
+
+  try {
+    const updatedStatus = await api.getColdStartStatus(myAddr);
+    const vouch = updatedStatus.vouch || [];
+    const needed = window._config?.VOUCHES_REQUIRED || 2;
+
+    if (vouch.length === 0) {
+      container.innerHTML = `<div class="cs-waiting"><div class="spinner"></div> Waiting for vouchers (0 / ${needed} required)...</div>`;
+      return;
+    }
+
+    container.innerHTML = `
+      <h4>Received Vouches (${vouch.length} / ${needed} required)</h4>
+      ${vouch.map(v => `
+        <div style="border-top: 1px solid var(--border-color); padding-top: 8px; margin-top: 8px;">
+          <div class="cs-vouch-row">
+            <span>Voucher</span>
+            <code>${_short(v.voucher_id)}</code>
+          </div>
+          <div class="cs-vouch-row">
+            <span>Stake</span>
+            <strong>${(v.stake_amount || 0).toFixed(4)} POR</strong>
+          </div>
+          <div class="cs-vouch-row">
+            <span>Status</span>
+            <span class="badge-${v.status?.toLowerCase()}">${v.status}</span>
+          </div>
+        </div>
+      `).join('')}
+    `;
+  } catch {}
+}
+
+
 // ── FULL_NODE: Vouch Handler ──────────────────────────────────────────────────
 
 async function _handleVouch() {
@@ -421,9 +463,12 @@ async function _handleVouch() {
   btn.disabled = true; btn.textContent = 'Vouching…';
   try {
     const r = await api.submitVouch(target);
-    if (r.error) {
+    console.log("[Vouch Response]", r);
+    
+    // Check for both application-level and framework-level errors
+    if (r.error || r.detail) {
       msg.className = 'form-msg error';
-      msg.textContent = `❌ ${r.error}`;
+      msg.textContent = `❌ ${r.error || r.detail}`;
     } else {
       msg.className = 'form-msg success';
       msg.textContent = `✅ Vouched! Staked ${(r.stake_amount || 0).toFixed(4)} POR for ${_short(target)}.`;
@@ -487,10 +532,11 @@ async function _loadNodeList() {
 
     el.innerHTML = nodes.map(n => {
       const cls = _phaseClass(n.phase);
+      const isBanned = n.phase === 'BANNED';
       return `
-        <div class="cs-node-row">
+        <div class="cs-node-row${isBanned ? ' banned-row' : ''}">
           <div class="cs-node-id"><code title="${n.node_id}">${_short(n.node_id)}</code></div>
-          <span class="phase-badge ${cls}">${_phaseLabel(n.phase)}</span>
+          <span class="phase-badge ${cls}">${_phaseLabel(n.phase)}${isBanned ? ' ☠' : ''}</span>
           <span class="cs-node-rounds">Rounds: ${n.honest_rounds || 0}</span>
         </div>
       `;
