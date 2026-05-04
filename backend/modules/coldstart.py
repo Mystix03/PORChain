@@ -306,19 +306,33 @@ async def record_honest_round(node_id: str) -> dict:
         vouches = await storage.read_or_default(_VOUCHES_FILE, {})
         vouch_list = vouches.get(node_id, [])
         changed = False
+        raw_txs = []
         for v in vouch_list:
             if isinstance(v, dict) and v.get("status") == "ACTIVE":
+                v_id = v.get("voucher_id")
                 try:
-                    # Automatic full refund to voucher's wallet
-                    await wallet.unstake(v["stake_amount"], reason=f"GRADUATED:{node_id}")
+                    # 🚨 FIX: Specify the voucher's address to return THEIR money
+                    tx = await wallet.unstake(v["stake_amount"], address=v_id, reason=f"GRADUATED:{node_id}")
+                    raw_txs.append(tx)
+                    
                     from modules import audit
                     audit.log_event("REWARD", "Voucher Refunded", f"Node {node_id[:8]} graduated! Full stake {v['stake_amount']} returned to voucher.")
                 except Exception:
                     pass
                 v["status"] = "RELEASED"
                 changed = True
+        
         if changed:
             await storage.write(_VOUCHES_FILE, vouches)
+            
+            # 📡 Broadcast the refunds so the UI updates immediately
+            from modules import networking, consensus
+            for tx_dict in raw_txs:
+                try:
+                    await networking.broadcast("transaction", tx_dict)
+                    consensus.add_pending_event(tx_dict)
+                except Exception: pass
+
         return {"phase": "FULL_NODE", "rounds": rounds}
 
     return {"phase": current_phase, "rounds": rounds, "needed": config.PHASE3_HONEST_ROUNDS}
