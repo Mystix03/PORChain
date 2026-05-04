@@ -5,7 +5,7 @@ from modules import storage
 
 _REG_FILE = "registry.json"
 
-PHASES = ["UNKNOWN", "PHASE_1", "PHASE_2", "PHASE_3", "FULL_NODE", "BANNED"]
+PHASES = ["UNKNOWN", "PHASE_1", "PHASE_2", "PHASE_3", "UNDER_OBSERVATION", "FULL_NODE", "BANNED"]
 
 
 async def init() -> None:
@@ -47,6 +47,12 @@ async def set_phase(node_id: str, phase: str) -> None:
             "voucher": None,
         }
     await storage.write(_REG_FILE, reg)
+
+
+async def get_node(node_id: str) -> dict | None:
+    """Return the full state for a single node."""
+    nodes = await all_nodes()
+    return nodes.get(node_id)
 
 
 async def get_phase(node_id: str) -> str:
@@ -113,7 +119,7 @@ async def sync_from_peers() -> None:
                 continue
 
 # Helper for phase comparison
-PHASES = ["UNKNOWN", "PHASE_1", "PHASE_2", "PHASE_3", "FULL_NODE", "BANNED"]
+PHASES = ["UNKNOWN", "PHASE_1", "PHASE_2", "PHASE_3", "UNDER_OBSERVATION", "FULL_NODE", "BANNED"]
 def phase_index(p: str) -> int:
     try: return PHASES.index(p)
     except: return 0

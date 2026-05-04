@@ -27,15 +27,12 @@ async function renderColdStart(state) {
     const phase  = status.phase || 'UNKNOWN';
 
     // Prevent wiping DOM every 3 seconds if phase hasn't changed
-    // EXCEPT for PHASE_2 (vouch list) and PHASE_3 (rep bar) and FULL_NODE (node list)
+    // EXCEPT for dynamic data like Vouch lists and Round counters
     if (phase === _csCurrentPhase) {
         if (phase === 'PHASE_2') {
             _refreshVouchList(myAddr, status);
-        } else if (phase === 'PHASE_3') {
-            const rep = status.reputation_score || 0;
-            const repPct = Math.min(100, (rep * 100)).toFixed(0);
-            const bar = document.querySelector('.cs-rep-bar');
-            if (bar) bar.style.width = repPct + '%';
+        } else if (phase === 'PHASE_3' || phase === 'UNDER_OBSERVATION') {
+            _refreshRoundProgress(status, phase);
         } else if (phase === 'FULL_NODE') {
             _loadNodeList();
         }
@@ -62,13 +59,14 @@ async function renderColdStart(state) {
 // ── Phase Progress Bar ─────────────────────────────────────────────────────────
 
 function _renderPhaseProgress(phase) {
-  const phases = ['PHASE_1', 'PHASE_2', 'PHASE_3', 'FULL_NODE'];
+  const phases = ['PHASE_1', 'PHASE_2', 'PHASE_3', 'UNDER_OBSERVATION', 'FULL_NODE'];
   const idx    = phases.indexOf(phase);
 
   const steps = [
     { key: 'PHASE_1', icon: '📋', label: 'Candidate' },
     { key: 'PHASE_2', icon: '🤝', label: 'Vouching'  },
     { key: 'PHASE_3', icon: '🎓', label: 'Probationary' },
+    { key: 'UNDER_OBSERVATION', icon: '👁️', label: 'Observation' },
     { key: 'FULL_NODE', icon: '⬡', label: 'Full Node' },
   ];
 
@@ -106,7 +104,41 @@ function _renderPhaseContent(phase, status, myAddr) {
   if (phase === 'PHASE_1')  return _renderPhase1(status, myAddr);
   if (phase === 'PHASE_2')  return _renderPhase2(status, myAddr);
   if (phase === 'PHASE_3')  return _renderPhase3(status, myAddr);
+  if (phase === 'UNDER_OBSERVATION') return _renderObservation(status, myAddr);
   return `<div class="panel"><div class="empty-state">Unknown phase: ${phase}</div></div>`;
+}
+
+function _renderObservation(status, myAddr) {
+  const rounds = status.rounds || 0;
+  const total_needed = window._config?.PHASE3_HONEST_ROUNDS || 45;
+  const remaining = Math.max(0, total_needed - rounds);
+  const progress = Math.min(100, (rounds / total_needed) * 100).toFixed(0);
+
+  return `
+    <div class="panel" style="border-color: var(--accent-y)">
+      <div class="panel-header">
+        <span class="panel-icon">👁️</span>
+        <h2>Phase 4 — Under Observation</h2>
+      </div>
+      <div class="cs-explain">
+        <p>You have completed the initial probation! You are now <strong>Under Observation</strong>.</p>
+        <p>In this phase, you are a trusted validator, but your voucher's stake is still at partial risk. 
+        Stay honest for another <strong>${remaining} rounds</strong> to graduate to Full Node status and release the stake.</p>
+      </div>
+
+      <div class="cs-rep-section">
+        <label>Total Graduation Progress (${rounds} / ${total_needed} rounds)</label>
+        <div class="cs-rep-bar-wrap">
+          <div class="cs-rep-bar" style="width: ${progress}%; background: var(--accent-y)"></div>
+        </div>
+      </div>
+
+      <div class="cs-result" style="background: rgba(245, 158, 11, 0.1); border-color: var(--accent-y); color: var(--accent-y)">
+        ⚡ 50% of voucher stake is now protected. Final graduation releases 100%.
+      </div>
+    </div>
+    ${_renderNodeListPanel()}
+  `;
 }
 
 
@@ -202,9 +234,9 @@ function _renderPhase2(status, myAddr) {
 // ── Phase 3: Graduated Participation ──────────────────────────────────────────
 
 function _renderPhase3(status, myAddr) {
-  const rep  = status.reputation_score || 0;
-  const needed = 10; // PHASE3_HONEST_ROUNDS from config
-  const repPct = Math.min(100, (rep * 100)).toFixed(0);
+  const rounds = status.rounds || 0;
+  const needed = window._config?.PHASE3_ROUNDS || 20;
+  const progress = Math.min(100, (rounds / needed) * 100).toFixed(0);
 
   return `
     <div class="panel">
@@ -215,29 +247,26 @@ function _renderPhase3(status, myAddr) {
       <div class="cs-explain">
         <p>You are now a <strong>graduated participant</strong>. You can vote on block proposals
         and earn reputation. After <strong>${needed} honest consensus rounds</strong>, you will
-        be promoted to a Full Node with full block proposal rights.</p>
+        be promoted to the "Under Observation" phase.</p>
       </div>
 
       <div class="cs-rep-section">
-        <label>Reputation Score</label>
+        <label>Round Progress (${rounds} / ${needed})</label>
         <div class="cs-rep-bar-wrap">
-          <div class="cs-rep-bar" style="width: ${repPct}%"></div>
-        </div>
-        <div class="cs-rep-labels">
-          <span>${repPct}%</span>
-          <span>Target: 70%+</span>
+          <div class="cs-rep-bar" style="width: ${progress}%"></div>
         </div>
       </div>
 
       <div class="cs-tip">
         💡 Stay online and connected to peers — your node votes automatically when
-        blocks are proposed. Each honest vote increases your reputation.
+        blocks are proposed. Each honest vote increases your round count.
       </div>
 
-      ${status.eligible_to_propose
-        ? `<div class="cs-result success">✅ Reputation threshold met! Awaiting graduation broadcast.</div>`
+      ${rounds >= needed
+        ? `<div class="cs-result success">✅ Phase 3 complete! Awaiting transition to Observation.</div>`
         : ''}
     </div>
+    ${_renderNodeListPanel()}
   `;
 }
 
@@ -281,13 +310,20 @@ function _renderFullNode(status, myAddr) {
         <div class="form-msg" id="cs-penalize-msg"></div>
       </div>
 
-      <div class="panel-header" style="margin-top:24px">
-        <span class="panel-icon">◉</span>
-        <h3>All Known Nodes</h3>
-        <button class="btn-outline sm-btn" id="cs-refresh-nodes-btn" style="margin-left:auto">↺ Refresh</button>
-      </div>
-      <div id="cs-node-list"><div class="empty-state">Loading nodes...</div></div>
+      ${_renderNodeListPanel()}
     </div>
+  `;
+}
+
+function _renderNodeListPanel() {
+  return `
+    <div id="cs-sim-anchor"></div>
+    <div class="panel-header" style="margin-top:24px">
+      <span class="panel-icon">◉</span>
+      <h3>All Known Nodes</h3>
+      <button class="btn-outline sm-btn" id="cs-refresh-nodes-btn" style="margin-left:auto">↺ Refresh</button>
+    </div>
+    <div id="cs-node-list"><div class="empty-state">Loading nodes...</div></div>
   `;
 }
 
@@ -310,11 +346,15 @@ function _bindHandlers(phase, myAddr, status) {
     document.getElementById('cs-load-tasks-btn')?.addEventListener('click', () => _loadAndRenderTasks(myAddr));
   }
 
+  // Show node list for all voting phases
+  if (['PHASE_3', 'UNDER_OBSERVATION', 'FULL_NODE'].includes(phase)) {
+    document.getElementById('cs-refresh-nodes-btn')?.addEventListener('click', () => _loadNodeList());
+    _loadNodeList();
+  }
+
   if (phase === 'FULL_NODE') {
     document.getElementById('cs-vouch-btn')?.addEventListener('click', () => _handleVouch());
     document.getElementById('cs-penalize-btn')?.addEventListener('click', () => _handlePenalize());
-    document.getElementById('cs-refresh-nodes-btn')?.addEventListener('click', () => _loadNodeList());
-    _loadNodeList();
   }
 }
 
@@ -416,6 +456,30 @@ async function _submitTasks(myAddr, tasks) {
   } finally {
     btn.disabled = false;
     btn.textContent = '✅ Submit All Answers';
+  }
+}
+
+
+async function _refreshRoundProgress(status, phase) {
+  const rounds = status.rounds || 0;
+  
+  if (phase === 'PHASE_3') {
+    const needed = window._config?.PHASE3_ROUNDS || 20;
+    const progress = Math.min(100, (rounds / needed) * 100).toFixed(0);
+    const bar = document.querySelector('.cs-rep-bar');
+    if (bar) bar.style.width = progress + '%';
+    const label = document.querySelector('.cs-rep-section label');
+    if (label) label.textContent = `Round Progress (${rounds} / ${needed})`;
+  } else if (phase === 'UNDER_OBSERVATION') {
+    const total_needed = window._config?.PHASE3_HONEST_ROUNDS || 45;
+    const remaining = Math.max(0, total_needed - rounds);
+    const progress = Math.min(100, (rounds / total_needed) * 100).toFixed(0);
+    const bar = document.querySelector('.cs-rep-bar');
+    if (bar) bar.style.width = progress + '%';
+    const label = document.querySelector('.cs-rep-section label');
+    if (label) label.textContent = `Total Graduation Progress (${rounds} / ${total_needed} rounds)`;
+    const explain = document.querySelector('.cs-explain strong:last-child');
+    if (explain) explain.textContent = `${remaining} rounds`;
   }
 }
 
@@ -576,12 +640,12 @@ function _taskIcon(type) {
 
 function _phaseLabel(phase) {
   const map = { PHASE_1: 'Candidate Node', PHASE_2: 'Phase 1 Complete', PHASE_3: 'Probationary Validator',
-                FULL_NODE: 'Full Validator', BANNED: 'Banned', UNKNOWN: 'Unknown' };
+                UNDER_OBSERVATION: 'Observation', FULL_NODE: 'Full Validator', BANNED: 'Banned', UNKNOWN: 'Unknown' };
   return map[phase] || phase || '—';
 }
 
 function _phaseClass(phase) {
   const map = { PHASE_1: 'phase-1', PHASE_2: 'phase-2', PHASE_3: 'phase-3',
-                FULL_NODE: 'phase-full', BANNED: 'phase-ban' };
+                UNDER_OBSERVATION: 'phase-obs', FULL_NODE: 'phase-full', BANNED: 'phase-ban' };
   return map[phase] || '';
 }

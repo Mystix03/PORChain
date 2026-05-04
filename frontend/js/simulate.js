@@ -237,13 +237,21 @@ function _renderSimReport(d) {
 // We want this button on BOTH the Dashboard and the ColdStart Full Node panel.
 
 function injectSimulateButton(state) {
-  // 1. ColdStart Panel Injection (if it exists)
+  // 1. ColdStart Panel Injection (Primary Anchor)
+  const csAnchor = document.getElementById('cs-sim-anchor');
+  if (csAnchor) {
+    _createBtn(csAnchor, 'sim-btn-cs', state, true);
+    return;
+  }
+
+  // 2. Fallback to Admin Panel (if anchor not found)
   const csAdmin = document.getElementById('cs-penalize-btn')?.parentElement;
   if (csAdmin) _createBtn(csAdmin, 'sim-btn-cs', state, true);
 }
 
 function _createBtn(parent, id, state, asForm = false) {
-  if (state?.phase !== 'FULL_NODE') {
+  const allowed = ['PHASE_3', 'UNDER_OBSERVATION', 'FULL_NODE'].includes(state?.phase);
+  if (!allowed) {
     document.getElementById(id)?.remove();
     return;
   }

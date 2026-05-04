@@ -15,10 +15,15 @@ async def node_state():
     peers = await networking.load_peers()
     bal = await wallet.balance()
 
+    # Get full node info including rounds
+    node_info = await registry.get_node(node_id)
+    rounds = node_info.get("honest_rounds", 0) if node_info else 0
+
     return {
         "node_id": node_id,
         "public_key": node["public_key"],
         "phase": phase,
+        "rounds": rounds,
         "reputation_score": await reputation.get_score(node_id),
         **flags,
         "peers_count": len(peers),

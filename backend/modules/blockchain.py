@@ -186,7 +186,6 @@ async def _verify_transactions(events: list, chain: list) -> bool:
 
     for ev in events:
         type_ = ev.get("type")
-        # GENESIS_GRANT, FAUCET_GRANT and GENESIS events have no signatures — skip verification
         if type_ in ("GENESIS", "GENESIS_GRANT", "FAUCET_GRANT"):
             continue
         if type_ in ("SEND", "STAKE", "UNSTAKE", "SLASH"):
@@ -197,38 +196,66 @@ async def _verify_transactions(events: list, chain: list) -> bool:
             sig = ev.get("signature")
             pubkey = ev.get("sender_pubkey")
             
-            # ADDRESS VERIFICATION: The Sender ID MUST be the hash of the Public Key
-            # This allows us to verify the TX even if we don't have the sender in our registry yet!
-            import hashlib
             import base64
             try:
                 pub_bytes = base64.b64decode(pubkey)
                 derived_id = pub_bytes.hex()
-                if derived_id != sender:
-                    log.error(f"❌ TX Validation Failed: Sender ID {sender} does not match Public Key hash!")
-                    return False
             except Exception as e:
                 log.error(f"❌ TX Validation Failed: Invalid Public Key format: {e}")
                 return False
 
             # SIGNATURE VERIFICATION: Did the owner of this pubkey sign this data?
             payload = {k: v for k, v in ev.items() if k not in ("signature", "block_index")}
-            if not identity.verify(identity.canonical(payload), sig, pubkey):
-                log.error(f"❌ TX Validation Failed: Cryptographic Forgery detected from {sender}!")
-                return False
+            
+            # ── NEW: Protocol Authority Exception ──
+            # A SLASH/UNSTAKE is valid if:
+            # 1. Signed by a trusted FULL_NODE (Validator Authority)
+            # 2. Signed by the node that was being vouched for (Self-Slashing/Honest Admission)
+            is_protocol_tx = type_ in ("SLASH", "UNSTAKE")
+            if is_protocol_tx:
+                from modules import registry as reg
+                signer_id = pub_bytes.hex()
+                signer_info = await reg.get_node(signer_id)
+                
+                # Check if signer is an authority
+                is_authority = signer_info and signer_info.get("phase") == "FULL_NODE"
+                
+                # Check if it's a self-slash (Signer is the one who was being sponsored)
+                target_node_in_note = ev.get("note", "").split(":")[-1]
+                is_self_slash = (signer_id == target_node_in_note)
+
+                if is_authority or is_self_slash:
+                    if not identity.verify(identity.canonical(payload), sig, pubkey):
+                        log.error(f"❌ TX Validation Failed: Invalid Authority Signature from {signer_id}!")
+                        return False
+                else:
+                    log.error(f"❌ TX Validation Failed: Unauthorized signer {signer_id} (Not Full Node or Self)!")
+                    return False
+            else:
+                # Standard Transaction: Sender ID MUST match Public Key hash
+                if derived_id != sender:
+                    log.error(f"❌ TX Validation Failed: Sender ID {sender} does not match Public Key hash!")
+                    return False
+                if not identity.verify(identity.canonical(payload), sig, pubkey):
+                    log.error(f"❌ TX Validation Failed: Cryptographic Forgery detected from {sender}!")
+                    return False
 
             # 2. Balance Verification
-            if get_bal(sender) < amt:
-                log.error(f"❌ TX Validation Failed: Insufficient balance for {sender} (Needed {amt})")
-                return False
+            bal_obj = calculate_balance(sender, chain)
+            if type_ in ("SEND", "STAKE"):
+                if bal_obj["balance"] < amt:
+                    log.error(f"❌ TX Validation Failed: Insufficient balance for {sender}")
+                    return False
+            elif type_ in ("UNSTAKE", "SLASH"):
+                if bal_obj["staked"] < amt:
+                    log.error(f"❌ TX Validation Failed: Insufficient staked funds for {sender}")
+                    return False
             
-            simulated_balances[sender] -= amt
-            
-            if type_ == "SEND":
-                receiver = ev.get("to")
-                if receiver not in simulated_balances:
-                    simulated_balances[receiver] = calculate_balance(receiver, chain)["balance"]
-                simulated_balances[receiver] += amt
+            # Update simulated state
+            if type_ in ("SEND", "STAKE"):
+                simulated_balances[sender] = bal_obj["balance"] - amt
+            elif type_ == "UNSTAKE":
+                simulated_balances[sender] = bal_obj["balance"] + amt
 
     return True
 

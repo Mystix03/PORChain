@@ -118,7 +118,13 @@ input { font-family: inherit; }
 .phase-badge.phase-1    { border-color: var(--accent-y); color: var(--accent-y); }
 .phase-badge.phase-2    { border-color: var(--accent-v); color: var(--accent-v); }
 .phase-badge.phase-3    { border-color: var(--accent-c); color: var(--accent-c); }
+.phase-badge.phase-obs  { border-color: var(--accent-y); color: var(--accent-y); animation: observation-pulse 2s infinite; }
 .phase-badge.phase-ban  { border-color: var(--accent-r); color: var(--accent-r); }
+
+@keyframes observation-pulse {
+  0%, 100% { opacity: 1; box-shadow: 0 0 5px var(--accent-y); }
+  50%      { opacity: 0.7; box-shadow: 0 0 15px var(--accent-y); }
+}
 
 .wallet-chip {
   display: flex;

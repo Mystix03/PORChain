@@ -109,8 +109,9 @@ async function updateDashboard(state) {
   document.getElementById('full-node-id').textContent  = myAddr || '—';
   document.getElementById('full-pubkey').textContent    = myPub || '—';
 
-  // Threat Simulation (FULL_NODE only)
-  if (typeof injectSimulateButton === 'function') {
+  // Threat Simulation (Phase 3, Observation, and FULL_NODE)
+  const canSimulate = ['PHASE_3', 'UNDER_OBSERVATION', 'FULL_NODE'].includes(state.phase);
+  if (canSimulate && typeof injectSimulateButton === 'function') {
       injectSimulateButton(state);
   }
 }
@@ -188,6 +189,7 @@ function phaseLabel(phase) {
     PHASE_1: 'Phase 1',
     PHASE_2: 'Phase 2',
     PHASE_3: 'Phase 3',
+    UNDER_OBSERVATION: 'Observation',
     FULL_NODE: 'Full Node',
     BANNED: 'Banned',
     UNKNOWN: 'Unknown',
@@ -200,6 +202,7 @@ function phaseClass(phase) {
     PHASE_1: 'phase-1',
     PHASE_2: 'phase-2',
     PHASE_3: 'phase-3',
+    UNDER_OBSERVATION: 'phase-obs',
     FULL_NODE: 'phase-full',
     BANNED: 'phase-ban',
   };

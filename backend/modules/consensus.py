@@ -70,9 +70,9 @@ def add_pending_event(event: dict) -> None:
     _pending_events.append(event)
 
 
-async def run_consensus_round() -> dict | None:
+async def run_consensus_round(force: bool = False) -> dict | None:
     """
-    Called periodically by the scheduler.
+    Called periodically by the scheduler, or forced by emergency events.
     If this node is the selected proposer, create and broadcast a block.
     """
     from modules import identity as ident
@@ -83,7 +83,9 @@ async def run_consensus_round() -> dict | None:
 
     prev = await blockchain.last_block()
     proposer = await select_proposer(seed=prev["hash"])
-    if proposer != my_id:
+    
+    # If forced (Emergency), we propose anyway to finalize penalties
+    if proposer != my_id and not force:
         return None   # Not our turn
 
     events = list(_pending_events)
@@ -115,7 +117,7 @@ async def receive_block_proposal(block: dict, proposer_id: str) -> bool:
     # Cache the block so we can apply it when finalized
     _proposed_blocks[block.get("hash")] = block
 
-    if my_phase in ("PHASE_3", "FULL_NODE"):
+    if my_phase in ("PHASE_3", "UNDER_OBSERVATION", "FULL_NODE"):
         # Update OUR OWN reputation immediately when we cast a vote
         await reputation.update(my_id, honest=True)
         
@@ -128,8 +130,8 @@ async def receive_block_proposal(block: dict, proposer_id: str) -> bool:
         # Record our own vote locally
         await receive_block_vote(block.get("hash"), my_id, block)
 
-        # If we are PHASE_3, record this as an honest round
-        if my_phase == "PHASE_3":
+        # If we are in a probationary phase, record this as an honest round
+        if my_phase in ("PHASE_3", "UNDER_OBSERVATION"):
             from modules import coldstart
             result = await coldstart.record_honest_round(my_id)
             if result.get("phase") == "FULL_NODE":
@@ -207,7 +209,7 @@ async def receive_block_vote(block_hash: str, voter_id: str, block: dict | None 
                     if voter_node_id == my_id_snap:
                         continue  # We already updated our own rep in receive_block_proposal
                     voter_phase = await registry.get_phase(voter_node_id)
-                    if voter_phase == "PHASE_3":
+                    if voter_phase in ("PHASE_3", "UNDER_OBSERVATION"):
                         # Track their honest rounds in our local registry
                         await registry.increment_honest_rounds(voter_node_id)
 

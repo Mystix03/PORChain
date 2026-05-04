@@ -52,8 +52,8 @@ async def receive_broadcast(request: Request, msg: dict, bg_tasks: BackgroundTas
                 # Non-voting node: apply the block directly if it's valid and next
                 await blockchain.append_block(block)
 
-    elif msg_type == "TX":
-        tx = payload.get("tx")
+    elif msg_type in ("TX", "transaction"):
+        tx = payload if msg_type == "transaction" else payload.get("tx")
         if tx:
             # ── Security Gating: No BANNED nodes ──────────────────────────────
             sender_id = tx.get("from")

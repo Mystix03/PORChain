@@ -18,7 +18,9 @@ INITIAL_REPUTATION: float = 0.05
 # ── ColdStart ─────────────────────────────────────────────────────────────────
 PHASE1_TASK_COUNT: int = 5
 PHASE1_PASS_THRESHOLD: float = 0.8
-PHASE3_HONEST_ROUNDS: int = 10
+PHASE3_ROUNDS: int = 20           # 20 rounds to finish Phase 3
+OBSERVATION_ROUNDS: int = 25      # 25 rounds in Under Observation
+PHASE3_HONEST_ROUNDS: int = 45    # Total (20 + 25)
 VOUCHES_REQUIRED: int = 2
 VOUCH_DELTA: float = 0.1
 VOUCH_ALPHA: float = 0.5

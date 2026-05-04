@@ -140,19 +140,25 @@ async def stake(amount: float, reason: str = "VOUCH") -> dict:
     return tx
 
 
-async def unstake(amount: float, reason: str = "RELEASED") -> dict:
-    """Release locked stake back to balance."""
-    bal = await balance()
+async def unstake(amount: float, address: str = None, reason: str = "RELEASED") -> dict:
+    """Release locked stake back to balance. If address is None, uses self."""
+    if address is None:
+        address = identity.get()["node_id"]
+    
+    bal = await balance(address)
     release = min(amount, bal["staked"])
-    tx = _build_tx("UNSTAKE", identity.get()["node_id"], "NETWORK", release, note=reason)
+    tx = _build_tx("UNSTAKE", address, "NETWORK", release, note=reason)
     return tx
 
 
-async def slash(amount: float) -> dict:
-    """Destroy staked tokens as penalty."""
-    bal = await balance()
+async def slash(amount: float, address: str = None, note: str = "MALICIOUS_NODE") -> dict:
+    """Destroy staked tokens as penalty. If address is None, uses self."""
+    if address is None:
+        address = identity.get()["node_id"]
+
+    bal = await balance(address)
     loss = min(amount, bal["staked"])
-    tx = _build_tx("SLASH", identity.get()["node_id"], "BURN", loss, note="MALICIOUS_NODE")
+    tx = _build_tx("SLASH", address, "BURN", loss, note=note)
     return tx
 
 

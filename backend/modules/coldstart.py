@@ -287,19 +287,32 @@ async def get_vouch_status(node_id: str) -> list | None:
 # ═══════════════════════════════════════════════════════════════════════════════
 
 async def record_honest_round(node_id: str) -> dict:
-    """Called after each honest block round. Graduates to FULL_NODE after M rounds."""
+    """Called after each honest block round. Manages transitions through Phase 3 and Observation."""
     rounds = await registry.increment_honest_rounds(node_id)
+    current_phase = await registry.get_phase(node_id)
 
+    # 1. Transition: Phase 3 -> UNDER_OBSERVATION (After 20 rounds)
+    if current_phase == "PHASE_3" and rounds >= config.PHASE3_ROUNDS:
+        await registry.set_phase(node_id, "UNDER_OBSERVATION")
+        await _broadcast_phase_update(node_id, "UNDER_OBSERVATION")
+        return {"phase": "UNDER_OBSERVATION", "rounds": rounds}
+
+    # 2. Transition: UNDER_OBSERVATION -> FULL_NODE (After 45 rounds total)
     if rounds >= config.PHASE3_HONEST_ROUNDS:
         await registry.set_phase(node_id, "FULL_NODE")
-        # Release voucher stake — vouch is now a list of records
+        await _broadcast_phase_update(node_id, "FULL_NODE")
+        
+        # ── GRADUATION: Return 100% of stake to all vouchers ──
         vouches = await storage.read_or_default(_VOUCHES_FILE, {})
         vouch_list = vouches.get(node_id, [])
         changed = False
         for v in vouch_list:
             if isinstance(v, dict) and v.get("status") == "ACTIVE":
                 try:
+                    # Automatic full refund to voucher's wallet
                     await wallet.unstake(v["stake_amount"], reason=f"GRADUATED:{node_id}")
+                    from modules import audit
+                    audit.log_event("REWARD", "Voucher Refunded", f"Node {node_id[:8]} graduated! Full stake {v['stake_amount']} returned to voucher.")
                 except Exception:
                     pass
                 v["status"] = "RELEASED"
@@ -308,45 +321,76 @@ async def record_honest_round(node_id: str) -> dict:
             await storage.write(_VOUCHES_FILE, vouches)
         return {"phase": "FULL_NODE", "rounds": rounds}
 
-    return {"phase": "PHASE_3", "rounds": rounds, "needed": config.PHASE3_HONEST_ROUNDS}
+    return {"phase": current_phase, "rounds": rounds, "needed": config.PHASE3_HONEST_ROUNDS}
 
 
 async def penalize_malicious(node_id: str) -> dict:
-    """Ban a malicious node and slash its voucher's stake (mined on-chain)."""
+    """Ban a malicious node and slash its voucher's stake based on phase."""
+    current_phase = await registry.get_phase(node_id)
     await registry.set_phase(node_id, "BANNED")
     await reputation.update(node_id, honest=False)
 
     vouches = await storage.read_or_default(_VOUCHES_FILE, {})
     vouch_list = vouches.get(node_id, [])
-    if isinstance(vouch_list, dict):
-        vouch_list = [vouch_list] # Compat
-        
-    result = {"node_id": node_id, "phase": "BANNED", "slash_txs": []}
-
+    
+    result = {"node_id": node_id, "phase": "BANNED", "slash_txs": [], "return_txs": []}
     changed = False
+
     for v in vouch_list:
         if isinstance(v, dict) and v.get("status") == "ACTIVE":
+            amount = v.get("stake_amount", 0)
+            v_id = v.get("voucher_id")
             try:
-                slash_tx = await wallet.slash(v["stake_amount"])
-                # ✅ Mine the slash TX on-chain
-                from modules import consensus
-                consensus.add_pending_event(slash_tx)
-                from modules import networking
-                await networking.broadcast("TX", {"tx": slash_tx})
-                result["slash_txs"].append(slash_tx["tx_id"])
+                if current_phase == "PHASE_3":
+                    # ── PHASE 3: 100% Slash ──
+                    tx = await wallet.slash(amount, address=v_id, note=f"MALICIOUS_SLASH:{node_id}")
+                    result["slash_txs"].append(tx["tx_id"])
+                    result.setdefault("_raw_txs", []).append(tx)
+                    v["status"] = "SLASHED_100"
+                elif current_phase == "UNDER_OBSERVATION":
+                    # ── OBSERVATION: 50% Slash / 50% Return ──
+                    slash_tx = await wallet.slash(amount / 2, address=v_id, note=f"OBSERVATION_SHELTER_SLASH:{node_id}")
+                    return_tx = await wallet.unstake(amount / 2, address=v_id, reason=f"OBSERVATION_SHELTER:{node_id}")
+                    result["slash_txs"].append(slash_tx["tx_id"])
+                    result["return_txs"].append(return_tx["tx_id"])
+                    result.setdefault("_raw_txs", []).append(slash_tx)
+                    result.setdefault("_raw_txs", []).append(return_tx)
+                    v["status"] = "SLASHED_50"
+                else:
+                    # ── FULL_NODE: No effect on voucher ──
+                    return_tx = await wallet.unstake(amount, address=v_id, reason=f"SAFE_EXIT:{node_id}")
+                    result["return_txs"].append(return_tx["tx_id"])
+                    result.setdefault("_raw_txs", []).append(return_tx)
+                    v["status"] = "RELEASED_SAFE"
+
+                # Penalize voucher's reputation if node was still in probation
+                if current_phase in ("PHASE_3", "UNDER_OBSERVATION") and v_id:
+                    await reputation.update(v_id, honest=False)
+
             except Exception:
                 pass
-            v["status"] = "SLASHED"
             changed = True
 
-            # Also penalize voucher's reputation
-            if v.get("voucher_id"):
-                await reputation.update(v["voucher_id"], honest=False)
+    # ── Background the Broadcast to prevent HTTP timeout ──
+    async def _bg_slash(tx_list):
+        from modules import networking, consensus
+        for tx_dict in tx_list:
+            try:
+                await networking.broadcast("transaction", tx_dict)
+                consensus.add_pending_event(tx_dict)
+            except Exception: pass
+        
+        # 🚨 Emergency Consensus: Mine the slash immediately!
+        try:
+            await consensus.run_consensus_round(force=True)
+        except Exception: pass
+    
+    import asyncio
+    asyncio.create_task(_bg_slash(result.get("_raw_txs", [])))
 
     if changed:
         await storage.write(_VOUCHES_FILE, vouches)
 
-    # Broadcast phase change so all peers update their registry
     await _broadcast_phase_update(node_id, "BANNED")
     return result
 
@@ -365,7 +409,10 @@ async def _broadcast_phase_update(node_id: str, phase: str) -> None:
 
 async def get_node_status(node_id: str) -> dict:
     """Return full phase + reputation status for a node (used by frontend)."""
-    phase = await registry.get_phase(node_id)
+    node = await registry.get_node(node_id)
+    phase = node["phase"] if node else "UNKNOWN"
+    rounds = node["honest_rounds"] if node else 0
+    
     score = await reputation.get_score(node_id)
     flags = await reputation.eligibility_flags(node_id)
     vouch = await get_vouch_status(node_id)
@@ -376,6 +423,7 @@ async def get_node_status(node_id: str) -> dict:
     return {
         "node_id": node_id,
         "phase": phase,
+        "rounds": rounds,
         "reputation_score": round(score, 4),
         "eligible_to_vouch": flags["eligible_to_vouch"],
         "eligible_to_propose": flags["eligible_to_propose"],
