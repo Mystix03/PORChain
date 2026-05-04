@@ -343,6 +343,13 @@ async def penalize_malicious(node_id: str) -> dict:
     current_phase = await registry.get_phase(node_id)
     await registry.set_phase(node_id, "BANNED")
     await reputation.update(node_id, honest=False)
+    
+    # 📡 Broadcast the ban to the entire network immediately
+    from modules import networking
+    await networking.broadcast("PHASE_UPDATE", {
+        "node_id": node_id,
+        "phase": "BANNED"
+    })
 
     vouches = await storage.read_or_default(_VOUCHES_FILE, {})
     vouch_list = vouches.get(node_id, [])

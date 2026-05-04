@@ -133,6 +133,12 @@ async def receive(tx: dict) -> bool:
 
 async def stake(amount: float, reason: str = "VOUCH") -> dict:
     """Lock tokens as stake (vouching). Returns stake TX."""
+    # ── Security Gating: No BANNED nodes ──────────────────────────────────────
+    from modules import registry
+    my_id = identity.get()["node_id"]
+    if await registry.get_phase(my_id) == "BANNED":
+        raise ValueError("BANNED nodes cannot stake tokens")
+
     bal = await balance()
     if bal["balance"] < amount:
         raise ValueError("Insufficient balance to stake")
@@ -142,6 +148,15 @@ async def stake(amount: float, reason: str = "VOUCH") -> dict:
 
 async def unstake(amount: float, address: str = None, reason: str = "RELEASED") -> dict:
     """Release locked stake back to balance. If address is None, uses self."""
+    # ── Security Gating: No BANNED nodes ──────────────────────────────────────
+    from modules import registry
+    my_id = identity.get()["node_id"]
+    if await registry.get_phase(my_id) == "BANNED":
+        # Exception: Allow UNSTAKE if it's a protocol return (handled by validator)
+        # But prevent the local banned user from triggering it themselves
+        if not reason.startswith("GRADUATED") and not reason.startswith("OBSERVATION_SHELTER"):
+            raise ValueError("BANNED nodes cannot manually unstake tokens")
+
     if address is None:
         address = identity.get()["node_id"]
     

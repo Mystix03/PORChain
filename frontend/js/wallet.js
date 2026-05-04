@@ -50,7 +50,10 @@ async function renderWallet(state) {
     pasteBtn.onclick = async () => {
       try {
         const text = await navigator.clipboard.readText();
-        document.getElementById('send-to').value = text.trim();
+        const input = document.getElementById('send-to');
+        input.value = text.trim();
+        // 🚨 Trigger sanction check manually after paste
+        if (typeof checkSanctions === 'function') checkSanctions();
       } catch { /* clipboard denied */ }
     };
   }
@@ -61,6 +64,38 @@ async function renderWallet(state) {
       document.getElementById('send-amount').value = btn.dataset.amount;
     };
   });
+
+  // ── Sanction Check Listener ───────────────────────────────────────────────
+  const sendToInput = document.getElementById('send-to');
+  const sanctionWarn = document.getElementById('sanction-warning');
+  
+  const checkSanctions = async () => {
+    const addr = sendToInput.value.trim();
+    if (!addr || addr.length < 16) {
+        sanctionWarn.style.display = 'none';
+        return;
+    }
+    
+    try {
+        const data = await api.getAllNodes();
+        const nodes = data.nodes || {};
+        // 🚨 Dictionary lookup (much faster and correct for our API)
+        const target = nodes[addr];
+        if (target && target.phase === 'BANNED') {
+            sanctionWarn.style.display = 'flex';
+        } else {
+            sanctionWarn.style.display = 'none';
+        }
+    } catch {
+        sanctionWarn.style.display = 'none';
+    }
+  };
+
+  sendToInput.oninput = checkSanctions;
+  sendToInput.onpaste = () => setTimeout(checkSanctions, 50); // slight delay for paste to register
+  
+  // Initial check (in case field was already filled)
+  checkSanctions();
 
   // ── Transaction history ───────────────────────────────────────────────────
   await renderTxHistory();

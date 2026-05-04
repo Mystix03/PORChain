@@ -26,7 +26,14 @@ async def update(node_id: str, honest: bool) -> float:
     scores = await storage.read_or_default(_REP_FILE, {})
     r_t = scores.get(node_id, config.INITIAL_REPUTATION)
     h_t = 1.0 if honest else 0.0
-    r_next = config.LAMBDA * r_t + (1 - config.LAMBDA) * h_t
+    
+    if not honest:
+        # 🚨 THE NUKE: Malicious activity resets reputation to ZERO immediately
+        r_next = 0.0
+    else:
+        # Standard weighted average for honest behavior
+        r_next = config.LAMBDA * r_t + (1 - config.LAMBDA) * h_t
+        
     r_next = max(0.0, min(1.0, r_next))  # clamp to [0,1]
     
     from modules import audit
