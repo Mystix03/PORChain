@@ -103,11 +103,15 @@ async def history(address: str = None) -> list:
 
 async def send(to_address: str, amount: float) -> dict:
     """Create a signed TX. Balance is validated by the network upon block creation."""
-    # ── Security Gating: No BANNED nodes ──────────────────────────────────────
+    # ── Security Gating: Only Phase 3+ nodes can move funds ───────────────────
     from modules import registry
     my_id = identity.get()["node_id"]
-    if await registry.get_phase(my_id) == "BANNED":
-        raise ValueError("BANNED nodes cannot send tokens")
+    current_phase = await registry.get_phase(my_id)
+    allowed_phases = ["PHASE_3", "UNDER_OBSERVATION", "FULL_NODE"]
+
+    if current_phase not in allowed_phases:
+        raise ValueError(f"Action denied. Your node is in '{current_phase}'. "
+                         "You must reach Phase 3 (Validator) to move funds.")
 
     if amount <= 0:
         raise ValueError("Amount must be positive")
@@ -133,11 +137,15 @@ async def receive(tx: dict) -> bool:
 
 async def stake(amount: float, reason: str = "VOUCH") -> dict:
     """Lock tokens as stake (vouching). Returns stake TX."""
-    # ── Security Gating: No BANNED nodes ──────────────────────────────────────
+    # ── Security Gating: Only Phase 3+ nodes can stake ────────────────────────
     from modules import registry
     my_id = identity.get()["node_id"]
-    if await registry.get_phase(my_id) == "BANNED":
-        raise ValueError("BANNED nodes cannot stake tokens")
+    current_phase = await registry.get_phase(my_id)
+    allowed_phases = ["PHASE_3", "UNDER_OBSERVATION", "FULL_NODE"]
+
+    if current_phase not in allowed_phases:
+        raise ValueError(f"Action denied. Your node is in '{current_phase}'. "
+                         "You must reach Phase 3 (Validator) to stake tokens.")
 
     bal = await balance()
     if bal["balance"] < amount:
@@ -148,14 +156,21 @@ async def stake(amount: float, reason: str = "VOUCH") -> dict:
 
 async def unstake(amount: float, address: str = None, reason: str = "RELEASED") -> dict:
     """Release locked stake back to balance. If address is None, uses self."""
-    # ── Security Gating: No BANNED nodes ──────────────────────────────────────
+    # ── Security Gating: Only Phase 3+ nodes can manually unstake ─────────────
     from modules import registry
     my_id = identity.get()["node_id"]
-    if await registry.get_phase(my_id) == "BANNED":
-        # Exception: Allow UNSTAKE if it's a protocol return (handled by validator)
-        # But prevent the local banned user from triggering it themselves
+    current_phase = await registry.get_phase(my_id)
+    
+    if current_phase == "BANNED":
         if not reason.startswith("GRADUATED") and not reason.startswith("OBSERVATION_SHELTER"):
             raise ValueError("BANNED nodes cannot manually unstake tokens")
+    
+    allowed_phases = ["PHASE_3", "UNDER_OBSERVATION", "FULL_NODE"]
+    if current_phase not in allowed_phases:
+        # Allow protocol returns even for Phase 1/2 (though they shouldn't have stake yet)
+        if not reason.startswith("GRADUATED") and not reason.startswith("OBSERVATION_SHELTER"):
+            raise ValueError(f"Action denied. Your node is in '{current_phase}'. "
+                             "You must reach Phase 3 (Validator) to manually unstake.")
 
     if address is None:
         address = identity.get()["node_id"]

@@ -24,7 +24,12 @@ async function renderColdStart(state) {
     }
 
     const status = await api.getColdStartStatus(myAddr);
-    const phase  = status.phase || 'UNKNOWN';
+    // Fallback: If ColdStart status is unknown but global state says FULL_NODE, use that
+    let phase = status.phase;
+    if ((!phase || phase === 'UNKNOWN') && state?.phase === 'FULL_NODE') {
+        phase = 'FULL_NODE';
+    }
+    phase = phase || 'UNKNOWN';
 
     // Prevent wiping DOM every 3 seconds if phase hasn't changed
     // EXCEPT for dynamic data like Vouch lists and Round counters
