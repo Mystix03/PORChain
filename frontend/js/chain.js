@@ -37,7 +37,7 @@ function renderBlock(b) {
     if (e.type === 'SEND') {
       detail = `<span class="ev-detail"><strong>${(e.amount || 0).toFixed(2)}</strong> from <code class="sm-id">${(e.from || '').slice(0, 8)}</code> to <code class="sm-id">${(e.to || '').slice(0, 8)}</code></span>`;
     } else if (e.type === 'GENESIS') {
-      detail = `<span class="ev-detail">Initial allocation to <code class="sm-id">${(e.data?.node_id || '').slice(0, 8)}</code></span>`;
+      detail = `<span class="ev-detail">Initial allocation to <code class="sm-id">${(e.data?.note || '').slice(0, 10)}</code></span>`;
     } else if (e.amount) {
       detail = `<span class="ev-detail"><strong>${(e.amount || 0).toFixed(2)} POR</strong></span>`;
     }
