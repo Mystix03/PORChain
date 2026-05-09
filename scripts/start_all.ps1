@@ -3,7 +3,15 @@ $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $Root = (Resolve-Path "$ScriptDir\..").Path
 
 # 1. Detect Local IP Address
-$IP = (Get-NetIPAddress -AddressFamily IPv4 -InterfaceAlias "Wi-Fi 2").IPAddress
+$IP = (
+    Get-NetIPAddress -AddressFamily IPv4 |
+    Where-Object {
+        $_.IPAddress -notlike "127.*" -and
+        $_.InterfaceAlias -notmatch "vEthernet|Loopback|WSL|Bluetooth|Virtual"
+    } |
+    Select-Object -First 1 -ExpandProperty IPAddress
+)
+
 if (!$IP) {
     $IP = "127.0.0.1"
 }
