@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>POR-Chain Node Dashboard</title>
+  <meta name="description" content="Proof-of-Reputation decentralized blockchain node dashboard. Monitor your node phase, wallet balance, chain, and peers." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/css/style.css" />
+  <!-- Cryptography for Browser-Side Wallets -->
+  <script src="https://cdn.jsdelivr.net/npm/tweetnacl@1.0.3/nacl.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/ed25519-js@1.1.0/index.min.js"></script>
+</head>
+<body>
+  <!-- ── Header ────────────────────────────────────────────────── -->
+  <header class="topbar" id="topbar">
+    <div class="topbar-left">
+      <div class="logo">
+        <span class="logo-icon">⬡</span>
+        <span class="logo-text">POR<span class="logo-accent">Chain</span></span>
+      </div>
+      <div class="node-id-pill" id="node-id-pill" title="Your Node ID">
+        <span class="dot online" id="status-dot"></span>
+        <span id="node-id-short">Loading...</span>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <div class="phase-badge" id="phase-badge">—</div>
+      <div class="wallet-badge" id="wallet-badge">
+        <span class="wallet-icon">◎</span>
+        <span id="wallet-balance">0.00</span>
+        <span class="wallet-unit">POR</span>
+        <span class="wallet-staked" id="wallet-staked-chip"></span>
+      </div>
+      <div class="wallet-badge" id="rep-badge" style="background: rgba(30,30,36,0.6); border-color: #333;">
+        <span class="wallet-icon" style="color: #ffd700;">★</span>
+        <span id="rep-score">0.05</span>
+        <span class="wallet-unit">REP</span>
+      </div>
+      <button class="refresh-btn" id="refresh-btn" title="Refresh">⟳</button>
+    </div>
+  </header>
+
+  <!-- ── Main Layout ───────────────────────────────────────────── -->
+  <main class="layout" id="main-layout">
+
+    <!-- Loading splash -->
+    <div class="splash" id="splash">
+      <div class="splash-orb"></div>
+      <div class="splash-text">Connecting to node...</div>
+    </div>
+
+    <!-- ── Sidebar ─────────────────────────────────────────────── -->
+    <aside class="sidebar" id="sidebar">
+      <nav class="sidenav">
+        <a href="#" class="nav-item active" data-view="dashboard" id="nav-dashboard">
+          <span class="nav-icon">◈</span> Dashboard
+        </a>
+        <a href="#" class="nav-item" data-view="chain" id="nav-chain">
+          <span class="nav-icon">⛓</span> Chain
+        </a>
+        <a href="#" class="nav-item" data-view="wallet" id="nav-wallet">
+          <span class="nav-icon">◎</span> Wallet
+        </a>
+        <a href="#" class="nav-item" data-view="peers" id="nav-peers">
+          <span class="nav-icon">◉</span> Peers
+        </a>
+        <a href="#" class="nav-item" data-view="coldstart" id="nav-coldstart">
+          <span class="nav-icon">◇</span> ColdStart
+        </a>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="chain-height-badge">
+          <span>Chain Height</span>
+          <strong id="chain-height-sidebar">—</strong>
+        </div>
+      </div>
+    </aside>
+
+    <!-- ── Content ─────────────────────────────────────────────── -->
+    <div class="content" id="content">
+
+      <!-- Dashboard View -->
+      <section class="view active" id="view-dashboard">
+        <h1 class="view-title">Node Overview</h1>
+        <div class="stat-grid" id="stat-grid">
+          <div class="stat-card" id="stat-phase">
+            <div class="stat-label">Phase</div>
+            <div class="stat-value" id="stat-phase-val">—</div>
+          </div>
+          <div class="stat-card" id="stat-chain">
+            <div class="stat-label">Chain Height</div>
+            <div class="stat-value" id="stat-chain-val">—</div>
+          </div>
+          <div class="stat-card" id="stat-peers">
+            <div class="stat-label">Peers</div>
+            <div class="stat-value" id="stat-peers-val">—</div>
+          </div>
+          <div class="stat-card" id="stat-balance">
+            <div class="stat-label">Balance</div>
+            <div class="stat-value" id="stat-balance-val">—</div>
+          </div>
+        </div>
+
+        <!-- Eligibility Panel -->
+        <div class="panel" id="eligibility-panel">
+          <div class="panel-header">
+            <span class="panel-icon">🔐</span>
+            <h2>Eligibility Flags <span class="zkp-tag">ZKP-Ready</span></h2>
+          </div>
+          <div class="eligibility-grid" id="eligibility-grid">
+            <div class="elig-item" id="elig-vouch">
+              <div class="elig-dot" id="elig-vouch-dot"></div>
+              <span>Can Vouch</span>
+            </div>
+            <div class="elig-item" id="elig-vote">
+              <div class="elig-dot" id="elig-vote-dot"></div>
+              <span>Can Vote</span>
+            </div>
+            <div class="elig-item" id="elig-propose">
+              <div class="elig-dot" id="elig-propose-dot"></div>
+              <span>Can Propose</span>
+            </div>
+          </div>
+          <p class="zkp-note">⚡ Raw reputation score is never transmitted. Only eligibility flags are shared — ZKP proofs coming in Phase 7.</p>
+        </div>
+
+        <!-- Node Identity -->
+        <div class="panel" id="identity-panel">
+          <div class="panel-header">
+            <span class="panel-icon">🪪</span>
+            <h2>Node Identity</h2>
+          </div>
+          <div class="identity-row">
+            <span class="id-label">Node ID</span>
+            <code class="id-value" id="full-node-id">—</code>
+          </div>
+          <div class="identity-row">
+            <span class="id-label">Public Key</span>
+            <code class="id-value" id="full-pubkey">—</code>
+          </div>
+        </div>
+      </section>
+
+      <!-- Chain View -->
+      <section class="view" id="view-chain">
+        <h1 class="view-title">Block Explorer</h1>
+        <div class="chain-list" id="chain-list">
+          <div class="empty-state">Loading chain...</div>
+        </div>
+      </section>
+
+      <!-- Wallet View -->
+      <section class="view" id="view-wallet">
+        <h1 class="view-title">Wallet</h1>
+
+        <!-- ── Address + Balance Card ───────────────────────────────── -->
+        <div class="wallet-summary-card" id="wallet-summary">
+          <div class="wallet-card-top">
+            <div>
+              <div class="wallet-address-label">Your Wallet Address (= Node ID)</div>
+              <code class="wallet-address" id="wallet-address">—</code>
+            </div>
+            <button class="copy-addr-btn" id="copy-address-btn">⎘ Copy Address</button>
+          </div>
+
+          <div class="wallet-balance-grid">
+            <div class="wbal-item main">
+              <div class="wbal-label">Total Balance</div>
+              <div class="wbal-value" id="w-total">0.0000 POR</div>
+            </div>
+            <div class="wbal-item">
+              <div class="wbal-label">Available</div>
+              <div class="wbal-value avail" id="w-balance">0.0000 POR</div>
+            </div>
+            <div class="wbal-item">
+              <div class="wbal-label">Staked (locked)</div>
+              <div class="wbal-value stk" id="w-staked">0.0000 POR</div>
+            </div>
+          </div>
+
+          <!-- Stake bar -->
+          <div class="stake-bar-wrap">
+            <div class="stake-bar-fill" id="stake-bar" style="width:0%"></div>
+          </div>
+          <div class="stake-bar-label" id="stake-bar-label"></div>
+        </div>
+
+        <!-- ── How to Receive ──────────────────────────────────────── -->
+        <div class="panel receive-panel">
+          <div class="panel-header">
+            <span class="panel-icon">↓</span>
+            <h2>Receive POR</h2>
+          </div>
+          <p class="receive-info">Share your <strong>Wallet Address</strong> (Node ID) with the sender. They paste it into the Send form on their node.</p>
+          <div class="receive-addr-box">
+            <code id="receive-addr-display">—</code>
+            <button class="btn-outline" id="copy-receive-btn">⎘ Copy</button>
+          </div>
+          <div class="how-steps">
+            <div class="step"><span class="step-num">1</span> Copy your address above</div>
+            <div class="step"><span class="step-num">2</span> Share it with the sender</div>
+            <div class="step"><span class="step-num">3</span> They enter it in <strong>Send → Recipient</strong></div>
+            <div class="step"><span class="step-num">4</span> TX is signed &amp; broadcast to peers</div>
+            <div class="step"><span class="step-num">5</span> Balance updates here automatically</div>
+          </div>
+        </div>
+
+        <!-- ── Send Tokens ─────────────────────────────────────────── -->
+        <div class="panel">
+          <div class="panel-header">
+            <span class="panel-icon">↑</span>
+            <h2>Send POR Tokens</h2>
+          </div>
+
+          <div class="send-form" id="send-form">
+            <label class="field-label">Recipient Node ID (Wallet Address)</label>
+            <div class="input-row">
+              <input type="text" id="send-to" class="input-field" placeholder="Paste recipient's full Node ID here…" />
+              <button class="btn-outline icon-btn" id="paste-btn" title="Paste from clipboard">⎘ Paste</button>
+            </div>
+            <div id="sanction-warning" class="sanction-alert" style="display:none">
+                <span class="alert-icon">⚠️</span>
+                <div class="alert-text">
+                    <strong>RECIPIENT BANNED:</strong> This node has been blacklisted for malicious activity. Any funds sent to this address will be permanently locked and cannot be recovered.
+                </div>
+            </div>
+
+            <label class="field-label">Amount (POR)</label>
+            <input type="number" id="send-amount" class="input-field" placeholder="0.00" min="0.01" step="0.01" />
+
+            <div class="quick-amounts">
+              <span class="quick-label">Quick:</span>
+              <button class="quick-amount" data-amount="1">1</button>
+              <button class="quick-amount" data-amount="5">5</button>
+              <button class="quick-amount" data-amount="10">10</button>
+              <button class="quick-amount" data-amount="25">25</button>
+              <button class="quick-amount" data-amount="50">50</button>
+            </div>
+
+            <button class="btn-primary send-btn-full" id="send-btn">↑ Send POR</button>
+            <div class="form-msg" id="send-msg"></div>
+
+            <div class="send-note">
+              🔒 Transactions are signed with your private key and broadcast to all peers.<br>
+              ⚠ Requires at least 1 connected peer to propagate on-chain.
+            </div>
+          </div>
+        </div>
+
+        <!-- ── Transaction History ────────────────────────────────── -->
+        <div class="panel">
+          <div class="panel-header">
+            <span class="panel-icon">📋</span>
+            <h2>Transaction History</h2>
+            <button class="btn-outline sm-btn" id="refresh-tx-btn" style="margin-left:auto">↺ Refresh</button>
+          </div>
+          <div class="tx-list" id="tx-list">
+            <div class="empty-state">No transactions yet</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Peers View -->
+      <section class="view" id="view-peers">
+        <h1 class="view-title">Peer Network</h1>
+        <div class="panel">
+          <div class="panel-header">
+            <span class="panel-icon">+</span>
+            <h2>Add Peer</h2>
+          </div>
+          <div class="send-form">
+            <input type="text" id="peer-url-input" class="input-field" placeholder="http://192.168.x.x:5000" />
+            <button class="btn-primary" id="add-peer-btn">Add Peer</button>
+            <div class="form-msg" id="peer-msg"></div>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-header">
+            <span class="panel-icon">◉</span>
+            <h2>Connected Peers</h2>
+          </div>
+          <div class="peer-list" id="peer-list">
+            <div class="empty-state">No peers connected</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ColdStart View -->
+      <section class="view" id="view-coldstart">
+        <h1 class="view-title">ColdStart Onboarding</h1>
+        <div id="coldstart-content">
+          <div class="empty-state">Loading phase info...</div>
+        </div>
+      </section>
+    </div><!-- /content -->
+
+    <!-- ── Audit Sidebar ───────────────────────────────────────────── -->
+    <aside class="audit-panel" style="width: 380px; min-width: 380px; border-left: 1px solid var(--border); background: var(--bg-1); display: flex; flex-direction: column; overflow: hidden;">
+      <iframe src="/static/audit.html" style="width: 100%; height: 100%; border: none;"></iframe>
+    </aside>
+
+  </main>
+
+  <script src="/static/js/wallet_manager.js"></script>
+  <script src="/static/js/api.js"></script>
+  <script src="/static/js/chain.js"></script>
+  <script src="/static/js/wallet.js"></script>
+  <script src="/static/js/peers.js"></script>
+  <script src="/static/js/coldstart.js"></script>
+  <script src="/static/js/simulate.js"></script>
+  <script src="/static/js/app.js"></script>
+</body>
+</html>

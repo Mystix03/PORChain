@@ -1,0 +1,40 @@
+node_modules/
+target/
+.anchor/
+.local_keys/
+__MACOSX/
+id.json
+out.txt
+.DS_Store
+.env
+.env.*
+*.log
+dist/
+build/
+
+
+
+
+# Python
+__pycache__/
+*.py[cod]
+
+# Virtual env
+.venv/
+venv/
+# IDE
+.vscode/
+
+# Env
+.env
+
+# Logs
+*.log
+
+# Runtime data (VERY IMPORTANT)
+backend/data/
+backend/data_*/
+backend/backend/data_*/
+
+
+ngrok.exe
