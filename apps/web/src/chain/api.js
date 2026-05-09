@@ -8,7 +8,8 @@
  * the shape used by the Zustand store (useStore.js).
  */
 
-const BASE = import.meta.env.VITE_NODE_URL ?? "http://localhost:5000";
+// Use the provided VITE_NODE_URL, or fall back to the current browser origin (dynamic port)
+const BASE = import.meta.env.VITE_NODE_URL ?? ""; 
 
 async function req(path, options = {}) {
   const res = await fetch(`${BASE}${path}`, {

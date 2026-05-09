@@ -8,7 +8,7 @@ import contextlib
 import logging
 
 import uvicorn
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
@@ -138,9 +138,15 @@ _frontend = pathlib.Path(__file__).parent.parent / "frontend"
 if _frontend.exists():
     app.mount("/static", StaticFiles(directory=str(_frontend)), name="static")
 
-    @app.get("/", include_in_schema=False)
-    async def serve_frontend():
-        return FileResponse(str(_frontend / "index.html"))
+    import device_gateway
+    @app.middleware("http")
+    async def device_routing_middleware(request: Request, call_next):
+        # Let the gateway decide if it wants to handle this request (Mobile Proxying)
+        response = await device_gateway.handle_device_routing(request, _frontend)
+        if response:
+            return response
+        # Otherwise, let FastAPI handle it normally (APIs, etc.)
+        return await call_next(request)
 
 @app.get("/terminal", include_in_schema=False)
 async def serve_audit_terminal():
