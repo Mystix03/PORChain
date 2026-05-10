@@ -177,12 +177,13 @@ async def _verify_transactions(events: list, chain: list) -> bool:
     log = logging.getLogger("por-chain")
     
     # Create a simulated state for the duration of this block
-    simulated_balances = {}
+    simulated_states = {}
 
-    def get_bal(addr):
-        if addr not in simulated_balances:
-            simulated_balances[addr] = calculate_balance(addr, chain)["balance"]
-        return simulated_balances[addr]
+    def get_state(addr):
+        if addr not in simulated_states:
+            st = calculate_balance(addr, chain)
+            simulated_states[addr] = {"balance": st["balance"], "staked": st["staked"]}
+        return simulated_states[addr]
 
     for ev in events:
         type_ = ev.get("type")
@@ -204,23 +205,16 @@ async def _verify_transactions(events: list, chain: list) -> bool:
                 log.error(f"❌ TX Validation Failed: Invalid Public Key format: {e}")
                 return False
 
-            # SIGNATURE VERIFICATION: Did the owner of this pubkey sign this data?
+            # SIGNATURE VERIFICATION
             payload = {k: v for k, v in ev.items() if k not in ("signature", "block_index")}
             
-            # ── NEW: Protocol Authority Exception ──
-            # A SLASH/UNSTAKE is valid if:
-            # 1. Signed by a trusted FULL_NODE (Validator Authority)
-            # 2. Signed by the node that was being vouched for (Self-Slashing/Honest Admission)
             is_protocol_tx = type_ in ("SLASH", "UNSTAKE")
             if is_protocol_tx:
                 from modules import registry as reg
                 signer_id = pub_bytes.hex()
                 signer_info = await reg.get_node(signer_id)
                 
-                # Check if signer is an authority
                 is_authority = signer_info and signer_info.get("phase") == "FULL_NODE"
-                
-                # Check if it's a self-slash (Signer is the one who was being sponsored)
                 target_node_in_note = ev.get("note", "").split(":")[-1]
                 is_self_slash = (signer_id == target_node_in_note)
 
@@ -229,33 +223,33 @@ async def _verify_transactions(events: list, chain: list) -> bool:
                         log.error(f"❌ TX Validation Failed: Invalid Authority Signature from {signer_id}!")
                         return False
                 else:
-                    log.error(f"❌ TX Validation Failed: Unauthorized signer {signer_id} (Not Full Node or Self)!")
+                    log.error(f"❌ TX Validation Failed: Unauthorized signer {signer_id}!")
                     return False
             else:
-                # Standard Transaction: Sender ID MUST match Public Key hash
                 if derived_id != sender:
-                    log.error(f"❌ TX Validation Failed: Sender ID {sender} does not match Public Key hash!")
+                    log.error(f"❌ TX Validation Failed: Sender ID {sender} mismatch!")
                     return False
                 if not identity.verify(identity.canonical(payload), sig, pubkey):
-                    log.error(f"❌ TX Validation Failed: Cryptographic Forgery detected from {sender}!")
                     return False
 
-            # 2. Balance Verification
-            bal_obj = calculate_balance(sender, chain)
+            # 2. Balance Verification (using simulated state)
+            state = get_state(sender)
             if type_ in ("SEND", "STAKE"):
-                if bal_obj["balance"] < amt:
+                if state["balance"] < amt:
                     log.error(f"❌ TX Validation Failed: Insufficient balance for {sender}")
                     return False
+                state["balance"] -= amt
+                if type_ == "STAKE":
+                    state["staked"] += amt
             elif type_ in ("UNSTAKE", "SLASH"):
-                if bal_obj["staked"] < amt:
+                if state["staked"] < amt:
                     log.error(f"❌ TX Validation Failed: Insufficient staked funds for {sender}")
                     return False
-            
-            # Update simulated state
-            if type_ in ("SEND", "STAKE"):
-                simulated_balances[sender] = bal_obj["balance"] - amt
-            elif type_ == "UNSTAKE":
-                simulated_balances[sender] = bal_obj["balance"] + amt
+                state["staked"] -= amt
+                if type_ == "UNSTAKE":
+                    state["balance"] += amt
+
+    return True
 
     return True
 

@@ -49,16 +49,22 @@ async def balance(address: str = None) -> dict:
             amt = ev.get("amount", 0.0)
             
             if type_ == "SEND":
-                if ev.get("from") == address: state["balance"] -= amt
-                if ev.get("to") == address:   state["balance"] += amt
+                if ev.get("from") == address:
+                    if state["balance"] >= amt:
+                        state["balance"] -= amt
+                if ev.get("to") == address:
+                    state["balance"] += amt
             elif type_ == "STAKE" and ev.get("from") == address:
-                state["balance"] -= amt
-                state["staked"] += amt
+                if state["balance"] >= amt:
+                    state["balance"] -= amt
+                    state["staked"] += amt
             elif type_ == "UNSTAKE" and ev.get("from") == address:
-                state["staked"] -= amt
-                state["balance"] += amt
+                if state["staked"] >= amt:
+                    state["staked"] -= amt
+                    state["balance"] += amt
             elif type_ == "SLASH" and ev.get("from") == address:
-                state["staked"] -= amt
+                if state["staked"] >= amt:
+                    state["staked"] -= amt
 
     return state
 

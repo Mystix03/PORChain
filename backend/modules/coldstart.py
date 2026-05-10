@@ -8,6 +8,7 @@ Phase 3: Graduated  — can vote, cannot propose; after M honest rounds → FULL
 import hashlib
 import secrets
 import time
+import asyncio
 
 import config
 from modules import storage, identity, reputation, registry, wallet
@@ -286,56 +287,56 @@ async def get_vouch_status(node_id: str) -> list | None:
 # PHASE 3 — Graduated Participation
 # ═══════════════════════════════════════════════════════════════════════════════
 
+_graduation_lock = asyncio.Lock()
+
 async def record_honest_round(node_id: str) -> dict:
     """Called after each honest block round. Manages transitions through Phase 3 and Observation."""
-    rounds = await registry.increment_honest_rounds(node_id)
-    current_phase = await registry.get_phase(node_id)
+    async with _graduation_lock:
+        rounds = await registry.increment_honest_rounds(node_id)
+        current_phase = await registry.get_phase(node_id)
 
-    # 1. Transition: Phase 3 -> UNDER_OBSERVATION (After 20 rounds)
-    if current_phase == "PHASE_3" and rounds >= config.PHASE3_ROUNDS:
-        await registry.set_phase(node_id, "UNDER_OBSERVATION")
-        await _broadcast_phase_update(node_id, "UNDER_OBSERVATION")
-        return {"phase": "UNDER_OBSERVATION", "rounds": rounds}
+        # 1. Transition: Phase 3 -> UNDER_OBSERVATION (After 20 rounds)
+        if current_phase == "PHASE_3" and rounds >= config.PHASE3_ROUNDS:
+            await registry.set_phase(node_id, "UNDER_OBSERVATION")
+            await _broadcast_phase_update(node_id, "UNDER_OBSERVATION")
+            return {"phase": "UNDER_OBSERVATION", "rounds": rounds}
 
-    # 2. Transition: UNDER_OBSERVATION -> FULL_NODE (After 45 rounds total)
-    if rounds >= config.PHASE3_HONEST_ROUNDS:
-        await registry.set_phase(node_id, "FULL_NODE")
-        await _broadcast_phase_update(node_id, "FULL_NODE")
-        
-        # ── GRADUATION: Return 100% of stake to all vouchers ──
-        vouches = await storage.read_or_default(_VOUCHES_FILE, {})
-        vouch_list = vouches.get(node_id, [])
-        changed = False
-        raw_txs = []
-        for v in vouch_list:
-            if isinstance(v, dict) and v.get("status") == "ACTIVE":
-                v_id = v.get("voucher_id")
-                try:
-                    # 🚨 FIX: Specify the voucher's address to return THEIR money
-                    tx = await wallet.unstake(v["stake_amount"], address=v_id, reason=f"GRADUATED:{node_id}")
-                    raw_txs.append(tx)
-                    
-                    from modules import audit
-                    audit.log_event("REWARD", "Voucher Refunded", f"Node {node_id[:8]} graduated! Full stake {v['stake_amount']} returned to voucher.")
-                except Exception:
-                    pass
-                v["status"] = "RELEASED"
-                changed = True
-        
-        if changed:
-            await storage.write(_VOUCHES_FILE, vouches)
+        # 2. Transition: UNDER_OBSERVATION -> FULL_NODE (After 45 rounds total)
+        if current_phase != "FULL_NODE" and rounds >= config.PHASE3_HONEST_ROUNDS:
+            await registry.set_phase(node_id, "FULL_NODE")
+            await _broadcast_phase_update(node_id, "FULL_NODE")
             
-            # 📡 Broadcast the refunds so the UI updates immediately
-            from modules import networking, consensus
-            for tx_dict in raw_txs:
-                try:
-                    await networking.broadcast("transaction", tx_dict)
-                    consensus.add_pending_event(tx_dict)
-                except Exception: pass
+            # ── GRADUATION: Return 100% of stake to all vouchers ──
+            vouches = await storage.read_or_default(_VOUCHES_FILE, {})
+            vouch_list = vouches.get(node_id, [])
+            changed = False
+            raw_txs = []
+            for v in vouch_list:
+                if isinstance(v, dict) and v.get("status") == "ACTIVE":
+                    v_id = v.get("voucher_id")
+                    try:
+                        tx = await wallet.unstake(v["stake_amount"], address=v_id, reason=f"GRADUATED:{node_id}")
+                        raw_txs.append(tx)
+                        from modules import audit
+                        audit.log_event("REWARD", "Voucher Refunded", f"Node {node_id[:8]} graduated! Full stake {v['stake_amount']} returned.")
+                    except Exception: pass
+                    v["status"] = "RELEASED"
+                    changed = True
+            
+            if changed:
+                await storage.write(_VOUCHES_FILE, vouches)
+                from modules import networking, consensus
+                for tx_dict in raw_txs:
+                    try:
+                        await networking.broadcast("transaction", tx_dict)
+                        consensus.add_pending_event(tx_dict)
+                    except Exception: pass
 
-        return {"phase": "FULL_NODE", "rounds": rounds}
+            return {"phase": "FULL_NODE", "rounds": rounds}
 
-    return {"phase": current_phase, "rounds": rounds, "needed": config.PHASE3_HONEST_ROUNDS}
+        # If no transition occurred, return the current state
+        final_phase = await registry.get_phase(node_id)
+        return {"phase": final_phase, "rounds": rounds, "needed": config.PHASE3_HONEST_ROUNDS}
 
 
 async def penalize_malicious(node_id: str) -> dict:
