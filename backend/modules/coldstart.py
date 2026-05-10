@@ -21,7 +21,7 @@ _VOUCHES_FILE = "vouches.json"
 # PHASE 1 — Probation Tasks
 # ═══════════════════════════════════════════════════════════════════════════════
 
-TASK_TYPES = ["HASH_PREIMAGE", "SIGN_CHALLENGE", "VERIFY_HASH"]
+TASK_TYPES = ["HASH_PREIMAGE", "SIGN_CHALLENGE", "VERIFY_HASH", "POW"]
 
 
 def _generate_task(task_type: str) -> dict:
@@ -33,11 +33,14 @@ def _generate_task(task_type: str) -> dict:
         expected = challenge   # node must sign it (verified by signature check)
     elif task_type == "VERIFY_HASH":
         expected = hashlib.sha256(challenge.encode()).hexdigest()
+    elif task_type == "POW":
+        expected = "POW_SOLUTION"  # Placeholder, verified dynamically
     return {
         "task_id": secrets.token_hex(8),
         "type": task_type,
         "challenge": challenge,
         "expected": expected,
+        "difficulty": config.POW_DIFFICULTY if task_type == "POW" else None,
         "created_at": time.time(),
     }
 
@@ -106,7 +109,6 @@ def _verify_task_result(task: dict, submission: dict, node_id: str) -> bool:
             is_valid = identity.verify(task["challenge"], sig, pubkey)
         except Exception:
             pass
-            
         from modules import audit
         audit.log_event(
             category="CRYPTO",
@@ -114,6 +116,22 @@ def _verify_task_result(task: dict, submission: dict, node_id: str) -> bool:
             details=f"Message:\n{task['challenge']}\n\nSignature:\n{sig[:16]}...\n\nPublic Key:\n{pubkey[:16]}...\n\nVerification:\n{'VALID SIGNATURE' if is_valid else 'INVALID SIGNATURE'}"
         )
         return is_valid
+    elif t == "POW":
+        nonce = submission.get("answer") or ""
+        difficulty = task.get("difficulty", config.POW_DIFFICULTY)
+        
+        # Verify the Work: hash(challenge + nonce) must have N leading zeros
+        combined = task["challenge"] + str(nonce)
+        result_hash = hashlib.sha256(combined.encode()).hexdigest()
+        passed = result_hash.startswith("0" * difficulty)
+        
+        from modules import audit
+        audit.log_event(
+            category="CRYPTO",
+            title="Phase 1: Proof of Work Verification",
+            details=f"Challenge:\n{task['challenge']}\n\nSubmitted Nonce:\n{nonce}\n\nResult Hash:\n{result_hash}\n\nDifficulty:\n{difficulty} zeros\n\nVerification: {'PASS' if passed else 'FAIL'}"
+        )
+        return passed
 
 
 async def submit_task_results(node_id: str, submissions: list[dict]) -> dict:
@@ -140,18 +158,46 @@ async def submit_task_results(node_id: str, submissions: list[dict]) -> dict:
     score = valid / len(tasks) if tasks else 0.0
     passed = score >= config.PHASE1_PASS_THRESHOLD
 
+    # NEW: Extract the winning nonce from the PoW task
+    pow_nonce = 0
+    for sub in submissions:
+        task_id = sub.get("task_id")
+        orig_task = task_map.get(task_id)
+        if orig_task and orig_task["type"] == "POW":
+            try: 
+                # Convert to int, strip any whitespace
+                ans_str = str(sub.get("answer", "0")).strip()
+                pow_nonce = int(ans_str)
+                print(f"DEBUG: Found PoW Nonce for {node_id[:8]}: {pow_nonce}")
+            except Exception as e:
+                print(f"DEBUG: Failed to parse nonce '{sub.get('answer')}': {e}")
+                pow_nonce = 0
+            break
+
     if passed:
-        await registry.set_phase(node_id, "PHASE_2")
+        # Reset honest_rounds to 0 for a fresh start in Phase 2/3
+        await registry.set_phase(node_id, "PHASE_2", pow_nonce=pow_nonce, honest_rounds=0)
         from modules import networking
         await networking.broadcast("PHASE_UPDATE", {
             "node_id": node_id,
-            "phase": "PHASE_2"
+            "phase": "PHASE_2",
+            "pow_nonce": pow_nonce, # Broadcast work proof
+            "honest_rounds": 0
         })
 
-    tasks_store[node_id]["results"] = {"score": score, "passed": passed}
+    tasks_store[node_id]["results"] = {
+        "score": score, 
+        "passed": passed,
+        "pow_nonce": pow_nonce
+    }
     await storage.write(_TASKS_FILE, tasks_store)
 
-    return {"score": score, "passed": passed, "phase": "PHASE_2" if passed else "PHASE_1"}
+    return {
+        "score": score, 
+        "passed": passed, 
+        "phase": "PHASE_2" if passed else "PHASE_1",
+        "pow_nonce": pow_nonce
+    }
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -197,15 +243,27 @@ async def vouch(voucher_id: str, target_id: str) -> dict:
         return {"error": "Target node already has enough active vouches"}
 
     # Calculate stake: Ensure we use the most up-to-date score and config
-    voucher_score = await reputation.get_score(voucher_id)
+    voucher_score = await reputation.get_score(voucher_id) or 0.7
     
-    # DYNAMIC: Use 10% of current reputation or 0.1 default
-    v_score = float(voucher_score) if (voucher_score is not None and isinstance(voucher_score, (int, float)) and voucher_score > 0) else 0.7
-    v_delta = float(getattr(config, "VOUCH_DELTA", 0.1))
+    # NEW: Fetch target's PoW performance from registry
+    target_info = await registry.get_node(target_id)
+    target_nonce = target_info.get("pow_nonce", 0) if target_info else 0
     
-    # Formula: reputation * delta * 100 tokens. 
-    # Hardcoded minimum of 10.0 to ensure it's never zero and provides visual feedback.
-    stake_amount = float(max(10.0, v_score * v_delta * 100.0))
+    # ── Nonce-Based Dynamic Staking Logic ──
+    # Base is 15%. Discount is based on the "Work" (Nonce)
+    # Every 100,000 nonces = 1% discount
+    base_delta = config.VOUCH_DELTA # 0.15
+    work_discount = float(target_nonce) / 1000000.0
+    
+    # SAFETY: Clamp between 1% and 15%
+    dynamic_delta = max(0.01, min(base_delta, base_delta - work_discount))
+    
+    # Final amount = Voucher Rep * Delta * 100 (to use real token units)
+    stake_amount = round(float(voucher_score) * dynamic_delta * 100.0, 4)
+    
+    from modules import audit
+    audit.log_event("ECONOMY", "Nonce-Based Stake Calculated", 
+                    f"Target Nonce: {target_nonce}\nWork Discount: {work_discount:.2%}\nEffective Delta: {dynamic_delta:.2%}\nFinal Stake: {stake_amount} POR")
 
     # Stake from voucher's wallet
     try:

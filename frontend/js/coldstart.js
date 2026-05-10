@@ -32,21 +32,21 @@ async function renderColdStart(state) {
     // renders the Admin Panel instead of an empty/unknown state.
     let phase = status.phase;
     if ((!phase || phase === 'UNKNOWN') && state?.phase === 'FULL_NODE') {
-        phase = 'FULL_NODE';
+      phase = 'FULL_NODE';
     }
     phase = phase || 'UNKNOWN';
 
     // Prevent wiping DOM every 3 seconds if phase hasn't changed
     // EXCEPT for dynamic data like Vouch lists and Round counters
     if (phase === _csCurrentPhase) {
-        if (phase === 'PHASE_2') {
-            _refreshVouchList(myAddr, status);
-        } else if (phase === 'PHASE_3' || phase === 'UNDER_OBSERVATION') {
-            _refreshRoundProgress(status, phase);
-        } else if (phase === 'FULL_NODE') {
-            _loadNodeList();
-        }
-        return;
+      if (phase === 'PHASE_2') {
+        _refreshVouchList(myAddr, status);
+      } else if (phase === 'PHASE_3' || phase === 'UNDER_OBSERVATION') {
+        _refreshRoundProgress(status, phase);
+      } else if (phase === 'FULL_NODE') {
+        _loadNodeList();
+      }
+      return;
     }
 
     _csCurrentPhase = phase;
@@ -57,7 +57,7 @@ async function renderColdStart(state) {
 
     // Threat Simulation (FULL_NODE only)
     if (typeof injectSimulateButton === 'function') {
-        injectSimulateButton({ ...status, phase, node_id: myAddr });
+      injectSimulateButton({ ...status, phase, node_id: myAddr });
     }
 
   } catch (e) {
@@ -70,20 +70,20 @@ async function renderColdStart(state) {
 
 function _renderPhaseProgress(phase) {
   const phases = ['PHASE_1', 'PHASE_2', 'PHASE_3', 'UNDER_OBSERVATION', 'FULL_NODE'];
-  const idx    = phases.indexOf(phase);
+  const idx = phases.indexOf(phase);
 
   const steps = [
     { key: 'PHASE_1', icon: '📋', label: 'Candidate' },
-    { key: 'PHASE_2', icon: '🤝', label: 'Vouching'  },
+    { key: 'PHASE_2', icon: '🤝', label: 'Vouching' },
     { key: 'PHASE_3', icon: '🎓', label: 'Probationary' },
     { key: 'UNDER_OBSERVATION', icon: '👁️', label: 'Observation' },
     { key: 'FULL_NODE', icon: '⬡', label: 'Full Node' },
   ];
 
   const stepsHtml = steps.map((s, i) => {
-    const done    = i < idx;
+    const done = i < idx;
     const current = i === idx;
-    const cls     = done ? 'cs-step done' : current ? 'cs-step active' : 'cs-step';
+    const cls = done ? 'cs-step done' : current ? 'cs-step active' : 'cs-step';
     return `
       <div class="${cls}">
         <div class="cs-step-icon">${done ? '✓' : s.icon}</div>
@@ -111,9 +111,9 @@ function _renderPhaseProgress(phase) {
 function _renderPhaseContent(phase, status, myAddr) {
   if (phase === 'BANNED') return _renderBanned();
   if (phase === 'FULL_NODE') return _renderFullNode(status, myAddr);
-  if (phase === 'PHASE_1')  return _renderPhase1(status, myAddr);
-  if (phase === 'PHASE_2')  return _renderPhase2(status, myAddr);
-  if (phase === 'PHASE_3')  return _renderPhase3(status, myAddr);
+  if (phase === 'PHASE_1') return _renderPhase1(status, myAddr);
+  if (phase === 'PHASE_2') return _renderPhase2(status, myAddr);
+  if (phase === 'PHASE_3') return _renderPhase3(status, myAddr);
   if (phase === 'UNDER_OBSERVATION') return _renderObservation(status, myAddr);
   return `<div class="panel"><div class="empty-state">Unknown phase: ${phase}</div></div>`;
 }
@@ -157,7 +157,7 @@ function _renderObservation(status, myAddr) {
 function _renderPhase1(status, myAddr) {
   const result = status.task_result || {};
   const passed = result.passed;
-  const score  = result.score != null ? (result.score * 100).toFixed(0) + '%' : null;
+  const score = result.score != null ? (result.score * 100).toFixed(0) + '%' : null;
 
   return `
     <div class="panel">
@@ -273,8 +273,8 @@ function _renderPhase3(status, myAddr) {
       </div>
 
       ${rounds >= needed
-        ? `<div class="cs-result success">✅ Phase 3 complete! Awaiting transition to Observation.</div>`
-        : ''}
+      ? `<div class="cs-result success">✅ Phase 3 complete! Awaiting transition to Observation.</div>`
+      : ''}
     </div>
     ${_renderNodeListPanel()}
   `;
@@ -300,10 +300,21 @@ function _renderFullNode(status, myAddr) {
         <span class="panel-icon">🤝</span>
         <h3>Vouch for a Node</h3>
       </div>
-      <div class="send-form">
+      <div class="cs-explain">
+        <p>Vouching requires you to stake <strong>POR</strong> as collateral. 
+        A <strong>Work Discount</strong> is applied based on the target node's Proof-of-Work effort.</p>
+      </div>
+      
+      <div id="cs-dynamic-stake-wrap">
+         <div class="cs-stake-preview-card">
+            <div class="empty-state sm">Enter a Node ID below to calculate stake...</div>
+         </div>
+      </div>
+
+      <div class="send-form" style="margin-top:20px">
         <input type="text" id="cs-vouch-target" class="input-field"
-               placeholder="Paste Phase 2 Node ID here…" />
-        <button class="btn-primary" id="cs-vouch-btn">🤝 Vouch & Stake</button>
+               placeholder="Paste Phase 2 Node ID here…" oninput="window.updateStakePreview(this.value, ${status.reputation || 0.1})" />
+        <button class="btn-primary btn-glow" id="cs-vouch-btn" style="width:100%">🤝 Vouch & Stake</button>
         <div class="form-msg" id="cs-vouch-msg"></div>
       </div>
 
@@ -376,7 +387,7 @@ async function _loadAndRenderTasks(myAddr) {
   area.innerHTML = `<div class="empty-state"><div class="spinner"></div> Loading tasks...</div>`;
 
   try {
-    const data  = await api.getTasks(myAddr);
+    const data = await api.getTasks(myAddr);
     const tasks = data.tasks || [];
 
     if (!tasks.length) {
@@ -385,36 +396,83 @@ async function _loadAndRenderTasks(myAddr) {
     }
 
     area.innerHTML = `
-      <div class="cs-task-list">
+      <div class="cs-task-grid">
         ${tasks.map(t => `
-          <div class="cs-task-row" id="task-row-${t.task_id}">
-            <div class="cs-task-type">${_taskIcon(t.type)} ${t.type}</div>
-            <div class="cs-task-challenge">
-              <code>${t.challenge}</code>
+          <div class="cs-task-card" id="task-row-${t.task_id}">
+            <div class="cs-task-card-header">
+              <span class="task-icon-circle">${_taskIcon(t.type)}</span>
+              <div class="task-info">
+                <span class="task-label">${t.type.replace('_', ' ')}</span>
+                <code class="task-subtext">${t.task_id.slice(0, 8)}</code>
+              </div>
+              <div class="task-status-badge" id="status-badge-${t.task_id}">🕒 Pending</div>
             </div>
-            ${t.type === 'SIGN_CHALLENGE'
-              ? `<div class="cs-task-note">✍ This task will be auto-signed with your wallet key.</div>`
-              : `<input type="text" class="input-field cs-task-answer" data-task="${t.task_id}"
-                        placeholder="Computing…" readonly />`
-            }
+            
+            <div class="cs-task-card-body">
+              ${t.type === 'SIGN_CHALLENGE'
+        ? `<div class="task-success-note">Will be signed by your Node ID</div>`
+        : `<input type="text" class="task-input-compact" data-task="${t.task_id}" 
+                          placeholder="Waiting..." readonly />`
+      }
+            </div>
           </div>
         `).join('')}
-        <button class="btn-primary" id="cs-submit-tasks-btn" style="margin-top:12px">
-          ✅ Submit All Answers
+      </div>
+      
+      <div class="cs-submit-wrap">
+        <button class="btn-primary btn-glow" id="cs-submit-tasks-btn" disabled>
+          ✅ Finalize & Submit Results
         </button>
         <div class="form-msg" id="cs-task-msg"></div>
       </div>
     `;
 
-    // Auto-compute SHA256 for HASH_PREIMAGE and VERIFY_HASH tasks
-    for (const t of tasks) {
-      if (t.type === 'HASH_PREIMAGE' || t.type === 'VERIFY_HASH') {
-        const input = document.querySelector(`[data-task="${t.task_id}"]`);
-        if (input) {
-          const hash = await _sha256(t.challenge);
-          input.value = hash;
+    console.log("[ColdStart] Starting parallel task computations for", tasks.length, "tasks");
+
+    if (!window.crypto?.subtle) {
+      console.error("[ColdStart] CRITICAL: crypto.subtle is not available. This usually happens on non-HTTPS connections.");
+      area.innerHTML = `<div class="cs-result fail">❌ Security Error: Cryptographic functions are disabled by your browser on this connection. Please use <b>http://127.0.0.1:5000</b> or HTTPS.</div>`;
+      return;
+    }
+
+    const taskPromises = tasks.map(async (t) => {
+      const input = document.querySelector(`[data-task="${t.task_id}"]`);
+      if (!input) return;
+
+      try {
+        const badge = document.getElementById(`status-badge-${t.task_id}`);
+
+        if (t.type === 'HASH_PREIMAGE' || t.type === 'VERIFY_HASH') {
+          if (badge) badge.innerHTML = "🔍 Verifying...";
+          input.value = await _sha256(t.challenge);
+          if (badge) { badge.innerHTML = "✅ Validated"; badge.className = "task-status-badge success"; }
+        } else if (t.type === 'POW') {
+          const difficulty = t.difficulty || 3;
+          if (badge) badge.innerHTML = "⛏️ Mining...";
+          input.value = await _minePoW(t.challenge, difficulty, (attempts) => {
+            if (attempts % 1000 === 0) {
+              if (badge) badge.innerHTML = `⛏️ Mining (${attempts})`;
+            }
+          });
+          if (badge) { badge.innerHTML = "💎 Mined"; badge.className = "task-status-badge success"; }
+          input.classList.add('success-text');
+        } else if (t.type === 'SIGN_CHALLENGE') {
+          const badge = document.getElementById(`status-badge-${t.task_id}`);
+          if (badge) { badge.innerHTML = "✍️ Ready"; badge.className = "task-status-badge success"; }
         }
+      } catch (err) {
+        console.error(`[ColdStart] Error processing task ${t.task_id}:`, err);
+        input.value = "ERROR";
       }
+    });
+
+    await Promise.all(taskPromises);
+
+    // Enable submit button
+    const submitBtn = document.getElementById('cs-submit-tasks-btn');
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.textContent = "🚀 Send Verification Proofs";
     }
 
     document.getElementById('cs-submit-tasks-btn')?.addEventListener('click',
@@ -472,7 +530,7 @@ async function _submitTasks(myAddr, tasks) {
 
 async function _refreshRoundProgress(status, phase) {
   const rounds = status.rounds || 0;
-  
+
   if (phase === 'PHASE_3') {
     const needed = window._config?.PHASE3_ROUNDS || 20;
     const progress = Math.min(100, (rounds / needed) * 100).toFixed(0);
@@ -527,7 +585,7 @@ async function _refreshVouchList(myAddr, status) {
         </div>
       `).join('')}
     `;
-  } catch {}
+  } catch { }
 }
 
 
@@ -535,15 +593,15 @@ async function _refreshVouchList(myAddr, status) {
 
 async function _handleVouch() {
   const target = document.getElementById('cs-vouch-target').value.trim();
-  const msg    = document.getElementById('cs-vouch-msg');
-  const btn    = document.getElementById('cs-vouch-btn');
+  const msg = document.getElementById('cs-vouch-msg');
+  const btn = document.getElementById('cs-vouch-btn');
   if (!target) { msg.className = 'form-msg error'; msg.textContent = '⚠ Enter a target Node ID.'; return; }
 
   btn.disabled = true; btn.textContent = 'Vouching…';
   try {
     const r = await api.submitVouch(target);
     console.log("[Vouch Response]", r);
-    
+
     // Check for both application-level and framework-level errors
     if (r.error || r.detail) {
       msg.className = 'form-msg error';
@@ -564,8 +622,8 @@ async function _handleVouch() {
 
 async function _handlePenalize() {
   const target = document.getElementById('cs-penalize-target').value.trim();
-  const msg    = document.getElementById('cs-penalize-msg');
-  const btn    = document.getElementById('cs-penalize-btn');
+  const msg = document.getElementById('cs-penalize-msg');
+  const btn = document.getElementById('cs-penalize-btn');
   if (!target) { msg.className = 'form-msg error'; msg.textContent = '⚠ Enter a Node ID.'; return; }
 
   if (!confirm(`⚠ Are you sure you want to BAN and SLASH node:\n${target}\n\nThis cannot be undone.`)) return;
@@ -600,7 +658,7 @@ async function _loadNodeList() {
   if (!el) return;
 
   try {
-    const r    = await fetch(`${BASE_URL}/node/registry`);
+    const r = await fetch(`${BASE_URL}/node/registry`);
     const data = await r.json();
     const nodes = Object.values(data.nodes || data || {});
 
@@ -643,19 +701,99 @@ async function _sha256(str) {
     .join('');
 }
 
+async function _minePoW(challenge, difficulty, onProgress) {
+  let nonce = 0;
+  const target = '0'.repeat(difficulty);
+
+  return new Promise((resolve, reject) => {
+    async function loop() {
+      try {
+        // Process in batches of 500 to keep the UI responsive
+        for (let i = 0; i < 500; i++) {
+          nonce++;
+          const hash = await _sha256(challenge + nonce);
+          if (hash.startsWith(target)) {
+            resolve(nonce);
+            return;
+          }
+        }
+        if (onProgress) onProgress(nonce);
+        setTimeout(loop, 0);
+      } catch (e) {
+        reject(e);
+      }
+    }
+    loop();
+  });
+}
+
 function _taskIcon(type) {
-  const map = { HASH_PREIMAGE: '🔐', SIGN_CHALLENGE: '✍', VERIFY_HASH: '🔍' };
-  return map[type] || '❓';
+  if (type === 'HASH_PREIMAGE') return '🔒';
+  if (type === 'SIGN_CHALLENGE') return '✍️';
+  if (type === 'VERIFY_HASH') return '🔍';
+  if (type === 'POW') return '⛏️';
+  return '📝';
 }
 
 function _phaseLabel(phase) {
-  const map = { PHASE_1: 'Candidate Node', PHASE_2: 'Phase 1 Complete', PHASE_3: 'Probationary Validator',
-                UNDER_OBSERVATION: 'Observation', FULL_NODE: 'Full Validator', BANNED: 'Banned', UNKNOWN: 'Unknown' };
+  const map = {
+    PHASE_1: 'Candidate Node', PHASE_2: 'Phase 1 Complete', PHASE_3: 'Probationary Validator',
+    UNDER_OBSERVATION: 'Observation', FULL_NODE: 'Full Validator', BANNED: 'Banned', UNKNOWN: 'Unknown'
+  };
   return map[phase] || phase || '—';
 }
 
 function _phaseClass(phase) {
-  const map = { PHASE_1: 'phase-1', PHASE_2: 'phase-2', PHASE_3: 'phase-3',
-                UNDER_OBSERVATION: 'phase-obs', FULL_NODE: 'phase-full', BANNED: 'phase-ban' };
+  const map = {
+    PHASE_1: 'phase-1', PHASE_2: 'phase-2', PHASE_3: 'phase-3',
+    UNDER_OBSERVATION: 'phase-obs', FULL_NODE: 'phase-full', BANNED: 'phase-ban'
+  };
   return map[phase] || '';
 }
+
+// ── Dynamic Staking Helpers ──────────────────────────────────────────────────
+
+window.updateStakePreview = async function(targetId, myRep) {
+  const wrap = document.getElementById('cs-dynamic-stake-wrap');
+  if (!wrap || !targetId || targetId.length < 10) return;
+
+  try {
+    const nodes = await api.getRegistry();
+    const target = nodes[targetId];
+    
+    if (!target) {
+      wrap.innerHTML = `<div class="cs-stake-preview-card"><div class="empty-state sm">Target Node Not Found</div></div>`;
+      return;
+    }
+
+    const nonce = target.pow_nonce || 0;
+    const baseDelta = 0.15;
+    const workDiscount = (nonce / 1000000.0);
+    const dynamicDelta = Math.max(0.01, Math.min(baseDelta, baseDelta - workDiscount));
+    const finalStake = (myRep * dynamicDelta * 100.0).toFixed(4);
+
+    wrap.innerHTML = `
+      <div class="cs-stake-preview-card">
+        <div class="csp-row">
+          <span>Target Work Proof (Nonce)</span>
+          <strong>#${nonce.toLocaleString()}</strong>
+        </div>
+        <div class="csp-row">
+          <span>Base Multiplier</span>
+          <span>15.0%</span>
+        </div>
+        <div class="csp-row">
+          <span>Work Leverage</span>
+          <span class="success-text">-${(workDiscount * 100).toFixed(1)}%</span>
+        </div>
+        <div class="csp-divider"></div>
+        <div class="csp-row total">
+          <span>Your Effective Stake</span>
+          <strong>${finalStake} POR</strong>
+        </div>
+      </div>
+    `;
+  } catch (err) {
+    console.error("Stake Preview Error:", err);
+  }
+};

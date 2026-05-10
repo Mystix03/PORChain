@@ -56,7 +56,9 @@ $NodeBin = "C:\Users\Mystix\AppData\Roaming\nvm\v22.10.0"
 # Complex command to ensure PATH is set correctly and stays in the window
 $CmdLine = "cd '$WebDir'; `$env:PATH = '$NodeBin;' + `$env:PATH; npm run dev"
 
-Start-Process powershell -ArgumentList "-NoExit", "-Command", "$CmdLine"
+Start-Process powershell `
+    -WindowStyle Minimized `
+    -ArgumentList "-NoExit", "-Command", "$CmdLine"
 
 Write-Host "`n✅ ALL SYSTEMS GO!" -ForegroundColor Green
 Write-Host "Laptop (Static): http://$($IP):5000" -ForegroundColor Cyan

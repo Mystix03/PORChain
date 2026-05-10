@@ -84,9 +84,11 @@ async def receive_broadcast(request: Request, msg: dict, bg_tasks: BackgroundTas
         # Update our local registry to stay consistent.
         node_id = payload.get("node_id")
         phase = payload.get("phase")
-        valid_phases = {"PHASE_1", "PHASE_2", "PHASE_3", "FULL_NODE", "BANNED"}
+        valid_phases = {"PHASE_1", "PHASE_2", "PHASE_3", "UNDER_OBSERVATION", "FULL_NODE", "BANNED"}
         if node_id and phase in valid_phases:
-            await registry.set_phase(node_id, phase)
+            # Pass all extra fields (like pow_nonce, honest_rounds) to registry
+            metadata = {k: v for k, v in payload.items() if k not in ("node_id", "phase")}
+            await registry.set_phase(node_id, phase, **metadata)
 
     # Re-broadcast to our other peers (gossip protocol)
     # We do this in the background to prevent P2P network deadlocks

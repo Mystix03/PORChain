@@ -20,8 +20,9 @@ INITIAL_REPUTATION: float = 0.05
 
 # ── ColdStart (IEEE Paper Parameters) ──────────────────────────────────────────
 # IEEE paper: N = 20 Phase-1 tasks, θ_P = 0.9 pass threshold
-PHASE1_TASK_COUNT: int = 20
+PHASE1_TASK_COUNT: int = 5
 PHASE1_PASS_THRESHOLD: float = 0.9
+POW_DIFFICULTY: int = 3              # Number of leading zeros required for Phase 1 PoW
 
 # IEEE paper: M = 10 honest rounds to graduate Phase 3
 PHASE3_ROUNDS: int = 10

@@ -17,22 +17,32 @@ foreach ($p in $Ports) {
 
 # 2. Launch Nodes in separate windows
 Write-Host "Starting Node A (5000)..."
-Start-Process powershell -ArgumentList "-NoExit", "-Command", "Set-Location '$Root'; . .\scripts\start_node.ps1 5000"
+Start-Process powershell `
+    -WindowStyle Minimized `
+    -ArgumentList "-NoExit", "-Command", "Set-Location '$Root'; . .\scripts\start_node.ps1 5000"
 
 Start-Sleep -Seconds 2
 
 Write-Host "Starting Node B (5001)..."
-Start-Process powershell -ArgumentList "-NoExit", "-Command", "Set-Location '$Root'; . .\scripts\start_node.ps1 5001"
+Start-Process powershell `
+    -WindowStyle Minimized `
+    -ArgumentList "-NoExit", "-Command", "Set-Location '$Root'; . .\scripts\start_node.ps1 5001"
 
 Start-Sleep -Seconds 1
 
 Write-Host "Starting Node C (5002)..."
-Start-Process powershell -ArgumentList "-NoExit", "-Command", "Set-Location '$Root'; . .\scripts\start_node.ps1 5002"
+Start-Process powershell `
+    -WindowStyle Minimized `
+    -ArgumentList "-NoExit", "-Command", "Set-Location '$Root'; . .\scripts\start_node.ps1 5002"
 
 Start-Sleep -Seconds 1
 
 Write-Host "Starting Node D (5003)..."
-Start-Process powershell -ArgumentList "-NoExit", "-Command", "Set-Location '$Root'; . .\scripts\start_node.ps1 5003"
+Start-Process powershell `
+    -WindowStyle Minimized `
+    -ArgumentList "-NoExit", "-Command", "Set-Location '$Root'; . .\scripts\start_node.ps1 5003"
+
+
 
 Write-Host "`nCluster started! All 4 windows are open and venv-activated." -ForegroundColor Green
 Write-Host "Open your browser to:"

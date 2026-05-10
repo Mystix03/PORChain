@@ -17,6 +17,10 @@ const api = {
     const r = await fetch(`${BASE_URL}/node/registry`);
     return r.json();
   },
+  async getRegistry() {
+    const data = await this.getAllNodes();
+    return data.nodes || data;
+  },
   async addPeer(url) {
     const r = await fetch(`${BASE_URL}/peers/add`, {
       method: 'POST',
