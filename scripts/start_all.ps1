@@ -17,7 +17,7 @@ if (!$IP) {
 }
 
 Write-Host "------------------------------------------------" -ForegroundColor Cyan
-Write-Host "       🚀 POR-CHAIN FULL STACK LAUNCHER" -ForegroundColor Cyan
+Write-Host "       🚀 POR-CHAIN " -ForegroundColor Cyan
 Write-Host "------------------------------------------------" -ForegroundColor Cyan
 Write-Host "  Detected IP : $IP" -ForegroundColor Gray
 Write-Host "------------------------------------------------" -ForegroundColor Cyan
