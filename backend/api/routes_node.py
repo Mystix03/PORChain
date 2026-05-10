@@ -70,5 +70,6 @@ async def get_config():
     return {
         "VOUCHES_REQUIRED": config.VOUCHES_REQUIRED,
         "PHASE1_PASS_THRESHOLD": config.PHASE1_PASS_THRESHOLD,
+        "PHASE3_ROUNDS": config.PHASE3_ROUNDS,
         "PHASE3_HONEST_ROUNDS": config.PHASE3_HONEST_ROUNDS,
     }

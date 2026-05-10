@@ -25,8 +25,8 @@ PHASE1_PASS_THRESHOLD: float = 0.9
 
 # IEEE paper: M = 10 honest rounds to graduate Phase 3
 PHASE3_ROUNDS: int = 10
-OBSERVATION_ROUNDS: int = 0          # No extra observation phase (paper has single M)
-PHASE3_HONEST_ROUNDS: int = 10       # Total honest rounds = M
+OBSERVATION_ROUNDS: int = 10          # 10 additional rounds for observation
+PHASE3_HONEST_ROUNDS: int = PHASE3_ROUNDS + OBSERVATION_ROUNDS # Total rounds to graduate
 
 VOUCHES_REQUIRED: int = 1            # One voucher is sufficient per paper
 # IEEE paper: δ = 0.15 (15% reputation staked by voucher, Eq. 2)
