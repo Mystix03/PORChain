@@ -32,12 +32,14 @@ foreach ($p in $Ports) {
         Stop-Process -Id $procId -Force -ErrorAction SilentlyContinue 
     }
     
-    # Cleanup data folders
-    if ($p -ge 5000) {
-        $path = Join-Path $Root "backend\data_$p"
-        if (Test-Path $path) { Remove-Item -Recurse -Force $path }
-    }
 }
+
+# Cleanup ALL data_* folders
+Get-ChildItem "$Root\backend\data_*" -Directory -ErrorAction SilentlyContinue |
+    Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
+
+
+
 
 # 3. Start the 4-node Backend Cluster
 Write-Host "Starting Backend Cluster..." -ForegroundColor Yellow
