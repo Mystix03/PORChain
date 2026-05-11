@@ -12,7 +12,18 @@ $ErrorActionPreference = "Stop"
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $Root = (Resolve-Path "$ScriptDir\..").Path
 $Backend = Join-Path $Root "backend"
-$Venv = Join-Path $Root ".venv"
+
+if (Test-Path (Join-Path $Root ".venv")) {
+    $Venv = Join-Path $Root ".venv"
+}
+elseif (Test-Path (Join-Path $Root "venv")) {
+    $Venv = Join-Path $Root "venv"
+}
+else {
+    Write-Host "No virtual environment found!" -ForegroundColor Red
+    exit
+}
+
 $DataDir = Join-Path $Backend "data_$Port"
 
 Write-Host "------------------------------------------------" -ForegroundColor Cyan
@@ -21,7 +32,8 @@ Write-Host "------------------------------------------------" -ForegroundColor C
 Write-Host "  Port  : $Port" -ForegroundColor Cyan
 if ($Peers) {
     Write-Host "  Peers : $Peers" -ForegroundColor Cyan
-} else {
+}
+else {
     Write-Host "  Peers : none" -ForegroundColor Cyan
 }
 Write-Host "------------------------------------------------" -ForegroundColor Cyan
@@ -32,7 +44,8 @@ if (Test-Path $ActivateScript) {
     Write-Host "Activating Virtual Environment..." -ForegroundColor Gray
     Write-Host "Venv Path: $Venv" -ForegroundColor Gray
     . $ActivateScript
-} else {
+}
+else {
     Write-Host "Warning: venv activation script not found at $ActivateScript" -ForegroundColor Yellow
 }
 

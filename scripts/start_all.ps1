@@ -36,7 +36,7 @@ foreach ($p in $Ports) {
 
 # Cleanup ALL data_* folders
 Get-ChildItem "$Root\backend\data_*" -Directory -ErrorAction SilentlyContinue |
-    Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
+Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
 
 
 
@@ -47,14 +47,17 @@ Write-Host "Starting Backend Cluster..." -ForegroundColor Yellow
 
 Start-Sleep -Seconds 5
 
-# 4. Start the React Frontend in a 5th window (Node 22)
-Write-Host "Starting React Frontend Dashboard (Node 22)..." -ForegroundColor Green
+# 4. Start the React Frontend in a 5th window 
+Write-Host "Starting React Frontend Dashboard ..." -ForegroundColor Green
 
 $WebDir = Join-Path $Root "apps\web"
-$NodeBin = "C:\Users\zyrus\.nvm\versions\node\v24.10.0\bin"
+$NpmExe = (Get-Command npm).Source
+
+$NodeVersion = node -v
+Write-Host "Using Node Version: $NodeVersion" -ForegroundColor Cyan
 
 # Complex command to ensure PATH is set correctly and stays in the window
-$CmdLine = "cd '$WebDir'; `$env:PATH = '$NodeBin;' + `$env:PATH; npm run dev"
+$CmdLine = "cd '$WebDir'; & '$NpmExe' run dev"
 
 Start-Process powershell `
     -WindowStyle Minimized `
