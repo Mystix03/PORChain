@@ -106,7 +106,7 @@ async def _post_to_peer(client: httpx.AsyncClient, peer_url: str, message: dict)
 async def check_peers() -> dict:
     peers = await load_peers()
     status = {}
-    async with httpx.AsyncClient(timeout=1.0) as client:
+    async with httpx.AsyncClient(timeout=3.0) as client:
         async def _check(peer):
             try:
                 r = await client.get(f"{peer}/node_state")

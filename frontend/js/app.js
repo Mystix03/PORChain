@@ -35,8 +35,8 @@ async function init() {
   setupAuditDrawer();
   document.getElementById('refresh-btn').addEventListener('click', refresh);
 
-  // Auto-refresh every 3 seconds
-  setInterval(refresh, 3000);
+  // Auto-refresh every 8 seconds
+  setInterval(refresh, 8000);
 }
 
 function hideSplash() {
