@@ -68,8 +68,24 @@ Write-Host "------------------------------------------------" -ForegroundColor C
 # 5. Start the ML Oracle Sidecar
 Write-Host "Starting ML Misbehavior Oracle..." -ForegroundColor Magenta
 
+# Locate Virtual Environment path
+$VenvFound = ""
+if (Test-Path (Join-Path $Root ".venv")) {
+    $VenvFound = Join-Path $Root ".venv"
+}
+elseif (Test-Path (Join-Path $Root "venv")) {
+    $VenvFound = Join-Path $Root "venv"
+}
+
 $OracleDir = Join-Path $Root "scripts\ml-oracle"
-$OracleCmd = "cd '$OracleDir'; python oracle.py"
+$ActivateScript = if ($VenvFound) { Join-Path $VenvFound "Scripts\Activate.ps1" } else { "" }
+
+# Build the final chained command for the sub-shell
+if ($ActivateScript -and (Test-Path $ActivateScript)) {
+    $OracleCmd = "cd '$OracleDir'; . '$ActivateScript'; python oracle.py"
+} else {
+    $OracleCmd = "cd '$OracleDir'; python oracle.py"
+}
 
 Start-Process powershell `
     -WindowStyle Minimized `
