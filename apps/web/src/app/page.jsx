@@ -3,13 +3,14 @@ import { useState, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Splash from "@/components/splash";
 import { useStore } from "@/store/useStore";
-import { Toaster } from "sonner";
+import { Toaster, toast } from "sonner";
 import Home from "@/components/home";
 import Merit from "@/components/merit";
 import Validate from "@/components/validate";
 import Reputation from "@/components/reputation";
 import Vouch from "@/components/vouch";
 import Activity from "@/components/activity";
+import Chain from "@/components/chain";
 import SwapModal  from "@/components/modals/SwapModal";
 import SendModal  from "@/components/modals/SendModal";
 import ClaimModal from "@/components/modals/ClaimModal";
@@ -23,9 +24,12 @@ import {
   ShieldCheck,
   TrendingUp,
   Users,
+  Copy,
+  Layers,
   List,
   Bell,
   X,
+  Settings as SettingsIcon,
 } from "lucide-react";
 
 
@@ -48,12 +52,12 @@ export default function App() {
   useSyncStore(); // polls Python backend every 6s → syncs Zustand store
 
   const TABS = [
-    { id: "home",     label: "Home",     Icon: HomeIcon   },
-    graduated
-      ? { id: "validate", label: "Validate", Icon: ShieldCheck }
-      : { id: "merit",    label: "Merit",    Icon: Zap        },
+    { id: "home",       label: "Home",     Icon: HomeIcon   },
+    { id: "merit",      label: "Merit",    Icon: Zap        },
+    ...(graduated ? [{ id: "validate", label: "Validate", Icon: ShieldCheck }] : []),
     { id: "reputation", label: "Rep",      Icon: TrendingUp },
     { id: "vouch",      label: "Vouch",    Icon: Users      },
+    { id: "chain",      label: "Chain",    Icon: Layers     },
     { id: "activity",   label: "Activity", Icon: List       },
   ];
 
@@ -115,6 +119,7 @@ export default function App() {
       case "validate":   return <Validate />;
       case "reputation": return <Reputation />;
       case "vouch":      return <Vouch />;
+      case "chain":      return <Chain />;
       case "activity":   return <Activity />;
       default:           return <Home />;
     }
@@ -216,13 +221,22 @@ export default function App() {
                     Ascent
                   </div>
                   <div
+                    onClick={() => {
+                      navigator.clipboard.writeText(wallet);
+                      toast.success("Node ID copied to clipboard");
+                    }}
                     style={{
                       fontSize: 11,
                       color: "#9CA3AF",
                       fontWeight: 500,
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 4
                     }}
                   >
-                    {wallet}
+                    {wallet.length > 15 ? `${wallet.slice(0, 6)}...${wallet.slice(-4)}` : wallet}
+                    <Copy size={10} />
                   </div>
                 </div>
               </div>
@@ -492,7 +506,7 @@ export default function App() {
             })}
           </div>
           {/* ── Settings screen (overlay) ── */}
-          {showSettings && <Settings onClose={() => setShowSettings(false)} />}
+          {showSettings && <Settings onClose={() => setShowSettings(false)} nodeId={wallet} />}
 
           {/* ── Splash screen (first launch overlay) ── */}
           {showSplash && <Splash onDone={() => setShowSplash(false)} />}

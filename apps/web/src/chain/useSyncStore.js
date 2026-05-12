@@ -30,7 +30,7 @@ export function useSyncStore() {
   // Keep the displayed wallet address (node ID) in sync
   useEffect(() => {
     if (nodeId) {
-      setWallet(`${nodeId.slice(0, 6)}…${nodeId.slice(-4)}`);
+      setWallet(nodeId);
     }
   }, [nodeId, setWallet]);
 

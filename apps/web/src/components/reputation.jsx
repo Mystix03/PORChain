@@ -251,7 +251,7 @@ export default function Reputation() {
             />
           </AreaChart>
         </ResponsiveContainer>
-      </div>
+      </motion.div>
 
       {/* Stats row */}
       <motion.div
@@ -293,7 +293,7 @@ export default function Reputation() {
             </div>
           </div>
         ))}
-      </div>
+      </motion.div>
 
       {/* Decay warning */}
       <div
@@ -392,7 +392,7 @@ export default function Reputation() {
             </div>
           </div>
         ))}
-      </div>
+      </motion.div>
 
       {/* Event history */}
       <motion.div
@@ -495,7 +495,7 @@ export default function Reputation() {
             </div>
           );
         })}
-      </div>
+      </motion.div>
     </div>
   );
 }
