@@ -77,11 +77,10 @@ async def is_full_node_eligible(node_id: str) -> bool:
 
 
 async def eligibility_flags(node_id: str) -> dict:
-    Returns only boolean flags — raw score never included.
-    """
+    # Returns only boolean flags — raw score never included.
     score = await get_score(node_id)
     return {
         "eligible_to_vouch": score >= config.VOUCH_ELIGIBILITY_THRESHOLD,
         "eligible_to_propose": score >= config.FULL_NODE_REP_THRESHOLD,
         "eligible_to_vote": score > 0.0,   # Phase 3+
-    }
+    }
