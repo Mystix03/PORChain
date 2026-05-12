@@ -300,78 +300,86 @@
           <div class="stake-bar-label" id="stake-bar-label"></div>
         </div>
 
-        <!-- ── How to Receive ──────────────────────────────────────── -->
-        <div class="panel receive-panel">
-          <div class="panel-header">
-            <span class="panel-icon"><i data-lucide="arrow-down-left"></i></span>
-            <h2>Receive POR</h2>
-          </div>
-          <p class="receive-info">Share your <strong>Wallet Address</strong> (Node ID) with the sender. They paste it into the Send form on their node.</p>
-          <div class="receive-addr-box">
-            <code id="receive-addr-display">—</code>
-            <button class="btn-outline" id="copy-receive-btn" style="display:flex;align-items:center;gap:6px"><i data-lucide="copy" style="width:14px;height:14px"></i> Copy</button>
-          </div>
-          <div class="how-steps">
-            <div class="step"><span class="step-num">1</span> Copy your address above</div>
-            <div class="step"><span class="step-num">2</span> Share it with the sender</div>
-            <div class="step"><span class="step-num">3</span> They enter it in <strong>Send → Recipient</strong></div>
-            <div class="step"><span class="step-num">4</span> TX is signed &amp; broadcast to peers</div>
-            <div class="step"><span class="step-num">5</span> Balance updates here automatically</div>
-          </div>
-        </div>
-
-        <!-- ── Send Tokens ─────────────────────────────────────────── -->
-        <div class="panel">
-          <div class="panel-header">
-            <span class="panel-icon"><i data-lucide="arrow-up-right"></i></span>
-            <h2>Send POR Tokens</h2>
-          </div>
-
-          <div class="send-form" id="send-form">
-            <label class="field-label">Recipient Node ID (Wallet Address)</label>
-            <div class="input-row">
-              <input type="text" id="send-to" class="input-field" placeholder="Paste recipient's full Node ID here…" />
-               <button class="btn-outline icon-btn" id="paste-btn" title="Paste from clipboard"><i data-lucide="clipboard" style="width:14px;height:14px"></i> Paste</button>
-            </div>
-            <div id="sanction-warning" class="sanction-alert" style="display:none">
-                <span class="alert-icon"><i data-lucide="alert-triangle"></i></span>
-                <div class="alert-text">
-                    <strong>RECIPIENT BANNED:</strong> This node has been blacklisted for malicious activity. Any funds sent to this address will be permanently locked and cannot be recovered.
+        <!-- ── Main Deck ───────────────────────────────────────────── -->
+        <div class="wallet-action-grid" style="display: grid; grid-template-columns: 1.3fr 1fr; gap: 20px; align-items: flex-start;">
+          
+          <!-- Left Column: Execution / Send -->
+          <div style="display: flex; flex-direction: column; gap: 20px;">
+            
+            <!-- Compact Send Tokens -->
+            <div class="panel" style="margin-bottom:0">
+              <div class="panel-header">
+                <span class="panel-icon"><i data-lucide="send"></i></span>
+                <h2>Send POR</h2>
+                <!-- Hidden Information Tooltip -->
+                <div class="info-tip-container" style="position: relative; display: inline-block; margin-left: 6px; cursor: help;">
+                  <i data-lucide="info" style="width: 13px; height: 13px; opacity: 0.5; transition: opacity 0.2s;"></i>
+                  <div class="info-tip-popup" style="visibility: hidden; opacity: 0; position: absolute; z-index: 999; width: 220px; background: #1f2937; border: 1px solid #374151; color: #e5e7eb; text-align: left; border-radius: 8px; padding: 12px; left: 50%; transform: translateX(-50%) translateY(10px); bottom: 24px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); font-size: 11px; line-height: 1.5; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);">
+                    <div style="font-weight: 800; color: var(--accent-v); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;">Transaction Flow</div>
+                    <ul style="margin: 0; padding-left: 16px;">
+                      <li>Share your Node ID with the sender.</li>
+                      <li>Receiver must be active & discoverable on-network.</li>
+                      <li>TX signed locally & broadcast to p2p stream.</li>
+                      <li>Propagates to chain upon next finalized block.</li>
+                    </ul>
+                    <div style="position: absolute; top: 100%; left: 50%; margin-left: -5px; border-width: 5px; border-style: solid; border-color: #1f2937 transparent transparent transparent;"></div>
+                  </div>
                 </div>
-            </div>
+                <style>
+                  .info-tip-container:hover i { opacity: 1 !important; color: var(--accent-v); }
+                  .info-tip-container:hover .info-tip-popup { visibility: visible !important; opacity: 1 !important; transform: translateX(-50%) translateY(0) !important; }
+                </style>
+              </div>
 
-            <label class="field-label">Amount (POR)</label>
-            <input type="number" id="send-amount" class="input-field" placeholder="0.00" min="0.01" step="0.01" />
+              <div class="send-form" id="send-form">
+                <label class="field-label" style="font-size: 10px; opacity: 0.7">Recipient Node ID</label>
+                <div class="input-row">
+                  <input type="text" id="send-to" class="input-field" style="padding: 10px 14px; font-size: 12px;" placeholder="Enter destination wallet..." />
+                  <button class="btn-outline icon-btn" id="paste-btn" style="padding: 10px 14px"><i data-lucide="clipboard" style="width:14px;height:14px"></i></button>
+                </div>
+                <div id="sanction-warning" class="sanction-alert" style="display:none">
+                    <span class="alert-icon"><i data-lucide="alert-triangle"></i></span>
+                    <div class="alert-text">
+                        <strong>BANNED RECIPIENT:</strong> Funds will be lost forever.
+                    </div>
+                </div>
 
-            <div class="quick-amounts">
-              <span class="quick-label">Quick:</span>
-              <button class="quick-amount" data-amount="1">1</button>
-              <button class="quick-amount" data-amount="5">5</button>
-              <button class="quick-amount" data-amount="10">10</button>
-              <button class="quick-amount" data-amount="25">25</button>
-              <button class="quick-amount" data-amount="50">50</button>
-            </div>
+                <label class="field-label" style="margin-top: 4px; font-size: 10px; opacity: 0.7">Amount</label>
+                <input type="number" id="send-amount" class="input-field" style="padding: 10px 14px; font-size: 12px;" placeholder="0.00" min="0.01" step="0.01" />
 
-            <button class="btn-primary send-btn-full" id="send-btn" style="display:flex;align-items:center;justify-content:center;gap:8px"><i data-lucide="send" style="width:16px;height:16px"></i> Send POR</button>
-            <div class="form-msg" id="send-msg"></div>
+                <div class="quick-amounts" style="margin-top: 2px">
+                  <button class="quick-amount" style="padding: 4px 12px; font-size: 11px" data-amount="1">1</button>
+                  <button class="quick-amount" style="padding: 4px 12px; font-size: 11px" data-amount="5">5</button>
+                  <button class="quick-amount" style="padding: 4px 12px; font-size: 11px" data-amount="10">10</button>
+                  <button class="quick-amount" style="padding: 4px 12px; font-size: 11px" data-amount="all">Max</button>
+                </div>
 
-            <div class="send-note">
-              <span style="display:flex;align-items:center;gap:6px;margin-bottom:4px"><i data-lucide="lock" style="width:13px;height:13px;flex-shrink:0"></i> Transactions are signed with your private key and broadcast to all peers.</span>
-              <span style="display:flex;align-items:center;gap:6px"><i data-lucide="alert-circle" style="width:13px;height:13px;flex-shrink:0"></i> Requires at least 1 connected peer to propagate on-chain.</span>
+                <button class="btn-primary send-btn-full" id="send-btn" style="margin-top: 4px; display:flex; align-items:center; justify-content:center; gap:8px; padding: 12px 24px;">
+                  <i data-lucide="arrow-up-right" style="width:16px;height:16px"></i> Transact
+                </button>
+                <div class="form-msg" id="send-msg"></div>
+
+                <div class="send-note" style="padding: 8px 12px; font-size: 10px; margin-top: 8px">
+                  <span style="display:flex;align-items:center;gap:6px"><i data-lucide="shield-check" style="width:12px;height:12px;"></i> Cryptographically broadcast over P2P stream.</span>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
 
-        <!-- ── Transaction History ────────────────────────────────── -->
-        <div class="panel">
-          <div class="panel-header">
-            <span class="panel-icon"><i data-lucide="history"></i></span>
-            <h2>Transaction History</h2>
-            <button class="btn-outline sm-btn" id="refresh-tx-btn" style="margin-left:auto"><i data-lucide="rotate-cw" style="width:14px;height:14px"></i> Refresh</button>
+          <!-- Right Column: Ledger History -->
+          <div style="display: flex; flex-direction: column; gap: 20px;">
+            <div class="panel" style="margin-bottom:0; height: 100%; display: flex; flex-direction: column;">
+              <div class="panel-header" style="padding-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.05); margin-bottom: 12px;">
+                <span class="panel-icon"><i data-lucide="history"></i></span>
+                <h2 style="font-size: 14px">Ledger History</h2>
+                <button class="btn-outline sm-btn" id="refresh-tx-btn" style="margin-left:auto; padding: 4px 8px"><i data-lucide="rotate-cw" style="width:12px;height:12px"></i></button>
+              </div>
+              <div class="tx-list" id="tx-list" style="flex: 1; max-height: 400px; overflow-y: auto;">
+                <div class="empty-state" style="padding: 30px 0">No history detected</div>
+              </div>
+            </div>
           </div>
-          <div class="tx-list" id="tx-list">
-            <div class="empty-state">No transactions yet</div>
-          </div>
+
         </div>
       </section>
 

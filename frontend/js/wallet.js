@@ -63,7 +63,14 @@ async function renderWallet(state) {
   // Quick-amount buttons
   document.querySelectorAll('.quick-amount').forEach(btn => {
     btn.onclick = () => {
-      document.getElementById('send-amount').value = btn.dataset.amount;
+      const input = document.getElementById('send-amount');
+      if (btn.dataset.amount === 'all') {
+        const raw = document.getElementById('w-balance').textContent || '0';
+        const val = parseFloat(raw.replace(/[^0-9.]/g, ''));
+        input.value = isNaN(val) ? '' : val;
+      } else {
+        input.value = btn.dataset.amount;
+      }
     };
   });
 
