@@ -488,15 +488,278 @@
     <!-- ── Audit Side-Drawer ───────────────────────────────────────────── -->
     <aside class="audit-panel hidden" id="audit-drawer">
       <div class="audit-header">
-        <h3>Live Audit Feed</h3>
-        <button class="audit-close-btn" id="close-audit-btn" title="Close">
-          <i data-lucide="x" style="width:18px;height:18px"></i>
-        </button>
+        <div style="display:flex; align-items:center; gap:10px;">
+          <h3>Live Audit Feed</h3>
+          <div id="audit-live-badge" style="display:flex; align-items:center; gap:6px; background:rgba(212,248,50,0.08); border:1px solid rgba(212,248,50,0.2); border-radius:20px; padding:3px 10px; font-size:10px; color:var(--accent-v); text-transform:uppercase; letter-spacing:1px;">
+            <span id="audit-pulse-dot" style="width:6px; height:6px; background:var(--accent-v); border-radius:50%; animation:pulse 1.5s infinite;"></span>
+            LIVE
+          </div>
+        </div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span id="audit-count-badge" style="font-size:10px; color:var(--text-3); background:var(--bg-2); border:1px solid var(--border); padding:2px 8px; border-radius:10px;">0 events</span>
+          <button class="audit-close-btn" id="close-audit-btn" title="Close">
+            <i data-lucide="x" style="width:18px;height:18px"></i>
+          </button>
+        </div>
       </div>
-      <div style="flex:1;position:relative;overflow:hidden">
-        <iframe src="/static/audit.html" style="width: 100%; height: 100%; border: none;"></iframe>
+
+      <!-- Filter strip -->
+      <div style="display:flex; gap:6px; padding:10px 16px; border-bottom:1px solid var(--border); flex-wrap:wrap; flex-shrink:0; background:var(--bg-0);">
+        <button class="audit-filter-btn active" data-cat="ALL">All</button>
+        <button class="audit-filter-btn" data-cat="CONSENSUS">Consensus</button>
+        <button class="audit-filter-btn" data-cat="CRYPTO">Crypto</button>
+        <button class="audit-filter-btn" data-cat="REPUTATION">Reputation</button>
+        <button class="audit-filter-btn" data-cat="PROPOSER">Proposer</button>
+        <button class="audit-filter-btn" data-cat="ECONOMY">Economy</button>
+        <button class="audit-filter-btn" data-cat="REWARD">Reward</button>
+      </div>
+
+      <div id="audit-feed" style="flex:1; overflow-y:auto; padding:12px 14px; display:flex; flex-direction:column; gap:8px;">
+        <div class="empty-state" style="margin-top:40px;">Connecting to node…</div>
       </div>
     </aside>
+
+    <style>
+      /* ── Audit Feed Native Styles ── */
+      .audit-filter-btn {
+        background: rgba(255,255,255,0.04);
+        border: 1px solid var(--border);
+        color: var(--text-3);
+        font-size: 10px;
+        font-family: 'JetBrains Mono', monospace;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        padding: 3px 10px;
+        border-radius: 20px;
+        cursor: pointer;
+        transition: all 0.15s;
+      }
+      .audit-filter-btn.active,
+      .audit-filter-btn:hover {
+        background: rgba(212,248,50,0.1);
+        border-color: rgba(212,248,50,0.3);
+        color: var(--accent-v);
+      }
+      .audit-entry {
+        background: var(--bg-1);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        overflow: hidden;
+        animation: view-enter 0.25s ease;
+        flex-shrink: 0;
+      }
+      .audit-entry-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 8px 12px;
+        border-bottom: 1px solid var(--border);
+        background: rgba(255,255,255,0.02);
+      }
+      .audit-entry-title {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--text-1);
+      }
+      .audit-cat-pill {
+        font-size: 9px;
+        font-weight: 800;
+        padding: 2px 7px;
+        border-radius: 4px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        flex-shrink: 0;
+      }
+      .audit-cat-CONSENSUS  { background: rgba(139,233,253,0.12); color:#8be9fd; border:1px solid rgba(139,233,253,0.25); }
+      .audit-cat-CRYPTO     { background: rgba(255,184,108,0.12); color:#ffb86c; border:1px solid rgba(255,184,108,0.25); }
+      .audit-cat-REPUTATION { background: rgba(255,121,198,0.12); color:#ff79c6; border:1px solid rgba(255,121,198,0.25); }
+      .audit-cat-PROPOSER   { background: rgba(212,248,50,0.12);  color:var(--accent-v); border:1px solid rgba(212,248,50,0.25); }
+      .audit-cat-ECONOMY    { background: rgba(80,200,120,0.12);  color:#50c878; border:1px solid rgba(80,200,120,0.25); }
+      .audit-cat-REWARD     { background: rgba(255,215,0,0.12);   color:#ffd700; border:1px solid rgba(255,215,0,0.25); }
+      .audit-entry-time {
+        font-size: 10px;
+        color: var(--text-3);
+        font-family: 'JetBrains Mono', monospace;
+        flex-shrink: 0;
+      }
+      .audit-entry-body {
+        padding: 10px 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+      .audit-kv-row {
+        display: flex;
+        gap: 8px;
+        font-size: 10px;
+        line-height: 1.4;
+      }
+      .audit-kv-key {
+        color: var(--text-3);
+        min-width: 90px;
+        flex-shrink: 0;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+        font-size: 9px;
+        padding-top: 1px;
+      }
+      .audit-kv-val {
+        color: var(--text-1);
+        font-family: 'JetBrains Mono', monospace;
+        word-break: break-all;
+        font-size: 10px;
+      }
+      .audit-kv-val.pass { color: var(--accent-g); }
+      .audit-kv-val.fail { color: var(--accent-r); }
+      .audit-kv-val.hash { color: var(--accent-c); }
+      @keyframes audit-pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.4; }
+      }
+      #audit-pulse-dot { animation: audit-pulse 1.5s infinite; }
+    </style>
+
+    <script>
+    (function() {
+      let _knownKeys = new Set();
+      let _allEntries = [];
+      let _activeFilter = 'ALL';
+
+      const PHASE_MAP = {
+        'CRYPTO':     'Phase 1 · Verification',
+        'CONSENSUS':  'Phase 3+ · Finalization',
+        'REPUTATION': 'Phase 3+ · Scoring',
+        'PROPOSER':   'Phase 3+ · Block Selection',
+        'ECONOMY':    'Phase 2 · Stake Calculation',
+        'REWARD':     'Phase 2 · Voucher Graduation',
+      };
+
+      function parseDetails(raw) {
+        // Split on double-newline or "Key:\nValue" pattern
+        const lines = raw.split('\n');
+        const rows = [];
+        let i = 0;
+        while (i < lines.length) {
+          const line = lines[i].trim();
+          if (!line) { i++; continue; }
+          // If ends with ':' it's a key, next line(s) is value
+          if (line.endsWith(':') && i + 1 < lines.length) {
+            const key = line.slice(0, -1);
+            let val = '';
+            i++;
+            while (i < lines.length && lines[i].trim() && !lines[i].trim().endsWith(':')) {
+              val += (val ? ' ' : '') + lines[i].trim();
+              i++;
+            }
+            rows.push({ key, val });
+          } else {
+            rows.push({ key: '', val: line });
+            i++;
+          }
+        }
+        return rows;
+      }
+
+      function valClass(key, val) {
+        const v = val.toUpperCase();
+        if (v === 'PASS' || v === 'VALID SIGNATURE' || v.startsWith('PASS')) return 'pass';
+        if (v === 'FAIL' || v === 'INVALID SIGNATURE' || v.startsWith('FAIL')) return 'fail';
+        const k = key.toLowerCase();
+        if (k.includes('hash') || k.includes('nonce') || k.includes('key') || k.includes('sig')) return 'hash';
+        return '';
+      }
+
+      function renderEntry(log) {
+        const cat = log.category || 'UNKNOWN';
+        const timeStr = new Date(log.timestamp * 1000).toLocaleTimeString([], {
+          hour: '2-digit', minute: '2-digit', second: '2-digit'
+        });
+        const phase = PHASE_MAP[cat] || '';
+        const rows = parseDetails(log.details || '');
+
+        const bodyHtml = rows.map(r => `
+          <div class="audit-kv-row">
+            <span class="audit-kv-key">${r.key || '·'}</span>
+            <span class="audit-kv-val ${valClass(r.key, r.val)}">${r.val}</span>
+          </div>`).join('');
+
+        return `
+          <div class="audit-entry" data-cat="${cat}">
+            <div class="audit-entry-header">
+              <div class="audit-entry-title">
+                <span class="audit-cat-pill audit-cat-${cat}">${cat}</span>
+                ${log.title}
+                ${phase ? `<span style="font-size:9px; color:var(--text-3); font-weight:400;">${phase}</span>` : ''}
+              </div>
+              <span class="audit-entry-time">${timeStr}</span>
+            </div>
+            <div class="audit-entry-body">${bodyHtml}</div>
+          </div>`;
+      }
+
+      function applyFilter() {
+        const feed = document.getElementById('audit-feed');
+        if (!feed) return;
+        const filtered = _activeFilter === 'ALL'
+          ? _allEntries
+          : _allEntries.filter(e => e.category === _activeFilter);
+
+        if (filtered.length === 0) {
+          feed.innerHTML = `<div class="empty-state" style="margin-top:40px;">No ${_activeFilter === 'ALL' ? '' : _activeFilter + ' '}events yet.</div>`;
+          return;
+        }
+        feed.innerHTML = filtered.map(renderEntry).join('');
+      }
+
+      async function fetchAuditLogs() {
+        try {
+          const r = await fetch('/audit?limit=100');
+          if (!r.ok) return;
+          const data = await r.json();
+          const logs = (data.logs || []).sort((a, b) => b.timestamp - a.timestamp);
+
+          let changed = false;
+          for (const log of logs) {
+            const key = log.timestamp + '|' + log.title;
+            if (!_knownKeys.has(key)) {
+              _knownKeys.add(key);
+              _allEntries.unshift(log);
+              changed = true;
+            }
+          }
+          // Trim to 100 max
+          if (_allEntries.length > 100) _allEntries = _allEntries.slice(0, 100);
+
+          if (changed) {
+            const badge = document.getElementById('audit-count-badge');
+            if (badge) badge.textContent = `${_allEntries.length} event${_allEntries.length !== 1 ? 's' : ''}`;
+            applyFilter();
+          }
+        } catch (e) {
+          // silent — node may be starting up
+        }
+      }
+
+      // Start polling when DOM ready
+      document.addEventListener('DOMContentLoaded', () => {
+        // Filter button bindings
+        document.querySelectorAll('.audit-filter-btn').forEach(btn => {
+          btn.addEventListener('click', () => {
+            document.querySelectorAll('.audit-filter-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            _activeFilter = btn.dataset.cat;
+            applyFilter();
+          });
+        });
+
+        fetchAuditLogs();
+        setInterval(fetchAuditLogs, 3000);
+      });
+    })();
+    </script>
 
   </main>
 
