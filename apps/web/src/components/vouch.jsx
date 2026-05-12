@@ -1,7 +1,6 @@
 "use client";
-import { useState, useCallback } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import { useState, useCallback, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { useStore } from "@/store/useStore";
 import { toast } from "sonner";
 import {
@@ -263,94 +262,7 @@ export default function Vouch() {
         />
       </div>
 
-      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-        {filtered.map((user) => {
-          const done = vouched[user.wallet];
-          return (
-            <motion.div
-              layout
-              key={user.wallet}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.05 }}
-              style={{
-                background: "white",
-                borderRadius: 18,
-                padding: "14px 16px",
-                boxShadow: user.isOnline
-                  ? "0 0 0 1.5px #05C48F30, 0 2px 10px rgba(0,0,0,0.06)"
-                  : "0 1px 6px rgba(0,0,0,0.06)",
-                display: "flex",
-                alignItems: "center",
-                gap: 12,
-              }}
-            >
-              {/* Avatar with online ring */}
-              <div style={{ position: "relative", flexShrink: 0 }}>
-                <div
-                  style={{
-                    width: 46,
-                    height: 46,
-                    borderRadius: 14,
-                    background: `hsl(${(user.wallet.charCodeAt(0) * 7) % 360},55%,52%)`,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  <span style={{ color: "white", fontSize: 14, fontWeight: 800 }}>
-                    {user.wallet.slice(0, 2)}
-                  </span>
-                </div>
-                {user.isOnline && (
-                  <div
-                    className="online-dot"
-                    style={{
-                      position: "absolute",
-                      bottom: 0,
-                      right: 0,
-                      width: 11,
-                      height: 11,
-                      borderRadius: "50%",
-                      background: "#05C48F",
-                      border: "2px solid white",
-                    }}
-                  />
-                )}
-              </div>
 
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: "#0D1421" }}>
-                    {user.wallet}
-                  </div>
-                </div>
-                <div style={{ fontSize: 11, color: "#9CA3AF", marginTop: 1 }}>
-                  {user.tasksCompleted}/20 tasks · Rep {Math.round(user.rep * 100)}%
-                  {" · "}
-                  <span style={{ color: user.isOnline ? "#05C48F" : "#D1D5DB", fontWeight: 600 }}>
-                    {user.isOnline ? `Active ${user.lastSeen}` : `Last seen ${user.lastSeen}`}
-                  </span>
-                </div>
-                <div
-                  style={{
-                    height: 3,
-                    background: "#F3F4F6",
-                    borderRadius: 2,
-                    marginTop: 6,
-                    overflow: "hidden",
-                  }}
-                >
-                  <div
-                    style={{
-                      height: "100%",
-                      background: user.isOnline ? "#05C48F" : "#0052FF",
-                      borderRadius: 2,
-                      width: `${Math.round(user.taskScore * 100)}%`,
-                    }}
-                  />
-                </div>
-              </div>
               {loading ? (
                 <div style={{ textAlign: "center", padding: "40px" }}>
                   <Loader size={24} className="animate-spin" color="#0052FF" />

@@ -308,7 +308,7 @@ export default function Merit() {
           <div style={{ height: 6, background: "#F3F4F6", borderRadius: 3, overflow: "hidden" }}>
             <div style={{ height: "100%", background: "#0052FF", width: `${progress}%`, transition: "width 0.4s ease" }} />
           </div>
-        </motion.div>
+        </div>
 
         {tasks.length === 0 ? (
           <button 

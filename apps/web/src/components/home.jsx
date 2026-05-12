@@ -205,8 +205,8 @@ export default function Home() {
               </span>
             </button>
           ))}
-        </motion.div>
-      </div>
+        </div>
+      </motion.div>
 
       {/* ── Network Status Strip ─────────────────────────────────────────────── */}
       <motion.div 
@@ -430,7 +430,7 @@ export default function Home() {
             </div>
           </div>
         </div>
-      </div>
+      </motion.div>
 
       {/* Merit Progress Cards — hidden once fully graduated */}
       {!graduated && (
