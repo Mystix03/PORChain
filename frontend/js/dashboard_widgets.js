@@ -50,6 +50,7 @@ function updateBlockTime(chain) {
     if (delta > 0 && delta < 3600) { totalDelta += delta; count++; }
   }
 
+  el.classList.remove('skeleton');
   if (count > 0) {
     const avg = (totalDelta / count).toFixed(1);
     el.textContent = avg;
