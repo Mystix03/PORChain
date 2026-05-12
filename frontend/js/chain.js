@@ -50,8 +50,10 @@ function renderBlock(b) {
     `;
   }).join('');
 
+  const hasTx = (b.events || []).length > 0;
+
   return `
-    <div class="block-card ${isGenesis ? 'genesis' : ''}" id="block-${b.index}">
+    <div class="block-card ${isGenesis ? 'genesis' : ''} ${hasTx ? 'has-tx' : ''}" id="block-${b.index}">
       <div class="block-header">
         <div class="block-index">#${b.index}${isGenesis ? ' Genesis' : ''}</div>
         <div class="block-time">${ts}</div>
@@ -83,3 +85,33 @@ function renderBlock(b) {
     </div>
   `;
 }
+
+// Setup Navigation Handlers explicitly on window for HTML calls
+window.scrollChainToBlock = function() {
+  const input = document.getElementById('goto-block-input');
+  const idx = input ? input.value.trim() : '';
+  if (idx === '') return;
+  const el = document.getElementById(`block-${idx}`);
+  if (el) {
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    // Highlight animation
+    el.style.transition = 'all 0.5s';
+    el.style.borderColor = '#0052FF';
+    el.style.boxShadow = '0 0 25px rgba(0, 82, 255, 0.4)';
+    setTimeout(() => {
+      el.style.borderColor = '';
+      el.style.boxShadow = '';
+    }, 1800);
+  }
+};
+
+window.scrollChainToBottom = function() {
+  // Directly scroll the full window to the absolute page bottom
+  window.scrollTo({
+    top: document.body.scrollHeight,
+    behavior: 'smooth'
+  });
+};
+
+// Pre-emptively trigger icon conversion for static HTML added in explorer view
+if (window.lucide) lucide.createIcons();

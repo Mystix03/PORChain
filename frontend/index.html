@@ -246,7 +246,19 @@
 
       <!-- Chain View -->
       <section class="view" id="view-chain">
-        <h1 class="view-title">Block Explorer</h1>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+          <h1 class="view-title" style="margin-bottom:0">Block Explorer</h1>
+          <div class="chain-goto-wrap" style="display:flex;gap:8px;align-items:center;">
+            <input type="number" id="goto-block-input" placeholder="Block #" style="background:var(--bg-2);border:1px solid var(--border);border-radius:6px;padding:8px 12px;color:var(--text-1);font-family:'JetBrains Mono',monospace;font-size:12px;width:90px;" />
+            <button id="goto-block-btn" onclick="scrollChainToBlock()" class="btn-outline" style="padding:8px 14px;font-size:12px;background:var(--bg-2);font-weight:700">Go To</button>
+            <button id="goto-latest-btn" onclick="scrollChainToBottom()" class="btn-primary" style="display:flex;align-items:center;justify-content:center;width:38px;height:36px;background:var(--accent-v);color:#000000;border:none;border-radius:6px;cursor:pointer;box-shadow:0 4px 15px rgba(212, 248, 50, 0.3);" title="Scroll to Bottom">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#000000" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display: block !important; stroke: #000000 !important; overflow: visible !important;">
+                <path d="M12 5v14" style="stroke: #000000 !important;"></path>
+                <path d="m19 12-7 7-7-7" style="stroke: #000000 !important;"></path>
+              </svg>
+            </button>
+          </div>
+        </div>
         <div class="chain-list" id="chain-list">
           <div class="empty-state">Loading chain...</div>
         </div>
@@ -486,7 +498,7 @@
 
   <script src="/static/js/wallet_manager.js"></script>
   <script src="/static/js/api.js"></script>
-  <script src="/static/js/chain.js"></script>
+  <script src="/static/js/chain.js?v=2"></script>
   <script src="/static/js/wallet.js"></script>
   <script src="/static/js/peers.js"></script>
   <script src="/static/js/coldstart.js"></script>
