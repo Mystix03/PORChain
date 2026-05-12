@@ -361,12 +361,6 @@ function _renderFullNode(status, myAddr) {
 function _renderNodeListPanel() {
   return `
     <div id="cs-sim-anchor"></div>
-    <div class="panel-header" style="margin-top:24px">
-      <span class="panel-icon"><i data-lucide="network"></i></span>
-      <h3>All Known Nodes</h3>
-      <button class="btn-outline sm-btn" id="cs-refresh-nodes-btn" style="margin-left:auto"><i data-lucide="rotate-cw"></i> Refresh</button>
-    </div>
-    <div id="cs-node-list"><div class="empty-state">Loading nodes...</div></div>
   `;
 }
 
