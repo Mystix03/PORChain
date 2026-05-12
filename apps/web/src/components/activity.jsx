@@ -1,9 +1,10 @@
 "use client";
+import { motion, AnimatePresence } from "framer-motion";
 import { useStore } from "@/store/useStore";
 import {
   CheckCircle, Shield, TrendingUp, Award,
   ArrowUpRight, ArrowDownLeft, Repeat, Zap,
-  ChevronRight, Lock, Slash,
+  ChevronRight, Lock, Slash, Link, Inbox, Clock,
 } from "lucide-react";
 
 const ACTIVITY_META = {
@@ -50,7 +51,7 @@ function chainTxToActivity(tx) {
   else if (type === "SLASH")   message = `Slashed ${tx.amount?.toFixed(4)} POR — ${tx.note || "penalty"}`;
   else message = `${type} · ${tx.amount?.toFixed(4)} POR`;
 
-  const blockLabel = tx.block_index === "Pending" ? "⏳ Pending" : `Block #${tx.block_index}`;
+  const blockLabel = tx.block_index === "Pending" ? <><Clock size={11} style={{display:"inline", marginRight:4}}/>Pending</> : `Block #${tx.block_index}`;
 
   return {
     id:        tx.tx_id ?? `chain-${tx.timestamp}`,
@@ -102,10 +103,14 @@ export default function Activity() {
       </div>
 
       {/* Filter tabs */}
-      <div style={{
-        display: "flex", gap: 8, marginBottom: 20,
-        overflowX: "auto", WebkitOverflowScrolling: "touch", paddingBottom: 4,
-      }}>
+      <motion.div
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        style={{
+          display: "flex", gap: 8, marginBottom: 20,
+          overflowX: "auto", WebkitOverflowScrolling: "touch", paddingBottom: 4,
+        }}
+      >
         {FILTERS.map((filter, i) => (
           <div
             key={filter}
@@ -131,7 +136,7 @@ export default function Activity() {
           display: "flex", alignItems: "center", justifyContent: "space-between",
         }}>
           <span style={{ fontSize: 12, color: "#374151", fontWeight: 600 }}>
-            🔗 {chainActivities.length} on-chain transaction{chainActivities.length !== 1 ? "s" : ""} found
+            <Link size={14} style={{ display: "inline", marginRight: 6 }} /> {chainActivities.length} on-chain transaction{chainActivities.length !== 1 ? "s" : ""} found
           </span>
           <span style={{ fontSize: 11, color: "#0052FF", fontWeight: 700 }}>
             Live from PoR-Chain
@@ -139,13 +144,19 @@ export default function Activity() {
         </div>
       )}
 
-      {/* Activity list */}
-      {merged.length === 0 ? (
-        <div style={{
-          background: "white", borderRadius: 20, padding: "48px 20px",
-          textAlign: "center", boxShadow: "0 1px 6px rgba(0,0,0,0.06)",
-        }}>
-          <div style={{ fontSize: 48, marginBottom: 12 }}>📭</div>
+      <AnimatePresence mode="popLayout">
+        {merged.length === 0 ? (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            style={{
+              background: "white", borderRadius: 20, padding: "48px 20px",
+              textAlign: "center", boxShadow: "0 1px 6px rgba(0,0,0,0.06)",
+            }}
+          >
+          <div style={{ width: 64, height: 64, borderRadius: "50%", background: "#F3F4F6", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
+            <Inbox size={32} color="#9CA3AF" />
+          </div>
           <div style={{ fontSize: 16, fontWeight: 700, color: "#0D1421", marginBottom: 6 }}>
             No Activity Yet
           </div>
@@ -153,27 +164,36 @@ export default function Activity() {
             Your transactions and reputation events will appear here
           </div>
         </div>
-      ) : (
-        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-          {merged.map((activity, i) => {
-            const meta = ACTIVITY_META[activity.type] || ACTIVITY_META.default;
-            const { Icon, color, bg, label } = meta;
-            const isTx = txTypes.has(activity.type);
-            const isStake = stakeTypes.has(activity.type);
-            const isPending = activity.time === "Pending";
+        <motion.div
+          layout
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          style={{ display: "flex", flexDirection: "column", gap: 10 }}
+        >
+            {merged.map((activity, i) => {
+              const meta = ACTIVITY_META[activity.type] || ACTIVITY_META.default;
+              const { Icon, color, bg, label } = meta;
+              const isTx = txTypes.has(activity.type);
+              const isStake = stakeTypes.has(activity.type);
+              const isPending = activity.time === "Pending";
 
-            return (
-              <div
-                key={activity.id ?? i}
-                style={{
-                  background: isPending ? "#FFFBEB" : "white",
-                  borderRadius: 18, padding: "16px",
-                  boxShadow: isPending
-                    ? "0 0 0 1.5px #FDE68A, 0 2px 8px rgba(0,0,0,0.05)"
-                    : "0 1px 5px rgba(0,0,0,0.06)",
-                  display: "flex", alignItems: "center", gap: 14, cursor: "pointer",
-                }}
-              >
+              return (
+                <motion.div
+                  layout
+                  key={activity.id ?? i}
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: i * 0.03 }}
+                  whileHover={{ background: "#F9FAFB", scale: 1.01 }}
+                  style={{
+                    background: isPending ? "#FFFBEB" : "white",
+                    borderRadius: 18, padding: "16px",
+                    boxShadow: isPending
+                      ? "0 0 0 1.5px #FDE68A, 0 2px 8px rgba(0,0,0,0.05)"
+                      : "0 1px 5px rgba(0,0,0,0.06)",
+                    display: "flex", alignItems: "center", gap: 14, cursor: "pointer",
+                  }}
+                >
                 <div style={{
                   width: 48, height: 48, borderRadius: 14,
                   background: bg, display: "flex", alignItems: "center",
@@ -209,8 +229,9 @@ export default function Activity() {
               </div>
             );
           })}
-        </div>
-      )}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Load more */}
       {merged.length >= 60 && (

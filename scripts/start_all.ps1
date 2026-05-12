@@ -63,6 +63,18 @@ Start-Process powershell `
     -WindowStyle Minimized `
     -ArgumentList "-NoExit", "-Command", "$CmdLine"
 
+Write-Host "------------------------------------------------" -ForegroundColor Cyan
+
+# 5. Start the ML Oracle Sidecar
+Write-Host "Starting ML Misbehavior Oracle..." -ForegroundColor Magenta
+
+$OracleDir = Join-Path $Root "scripts\ml-oracle"
+$OracleCmd = "cd '$OracleDir'; python oracle.py"
+
+Start-Process powershell `
+    -WindowStyle Minimized `
+    -ArgumentList "-NoExit", "-Command", "$OracleCmd"
+
 Write-Host "`n✅ ALL SYSTEMS GO!" -ForegroundColor Green
 Write-Host "Laptop (Static): http://$($IP):5000" -ForegroundColor Cyan
 Write-Host "Phone (React):   http://$($IP):5000" -ForegroundColor Cyan

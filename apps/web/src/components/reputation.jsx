@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useStore } from "@/store/useStore";
+import { motion } from "framer-motion";
 import {
   AreaChart,
   Area,
@@ -17,6 +18,7 @@ import {
   Download,
   ArrowUpRight,
   ArrowDownRight,
+  Clock,
 } from "lucide-react";
 
 const generateHistory = () => {
@@ -86,7 +88,9 @@ export default function Reputation() {
   return (
     <div style={{ padding: "20px 16px 0" }}>
       {/* Score hero + chart */}
-      <div
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
         style={{
           background: "white",
           borderRadius: 24,
@@ -250,7 +254,10 @@ export default function Reputation() {
       </div>
 
       {/* Stats row */}
-      <div
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.2 }}
         style={{
           display: "grid",
           gridTemplateColumns: "1fr 1fr 1fr",
@@ -301,7 +308,7 @@ export default function Reputation() {
           gap: 10,
         }}
       >
-        <span style={{ fontSize: 18 }}>⏳</span>
+        <Clock size={20} color="#D97706" style={{ flexShrink: 0, marginTop: 2 }} />
         <div>
           <div style={{ fontSize: 13, fontWeight: 700, color: "#92400E" }}>
             Decay Factor Active
@@ -314,7 +321,10 @@ export default function Reputation() {
       </div>
 
       {/* Vouch history */}
-      <div
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.3 }}
         style={{
           background: "white",
           borderRadius: 20,
@@ -385,7 +395,10 @@ export default function Reputation() {
       </div>
 
       {/* Event history */}
-      <div
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.4 }}
         style={{
           background: "white",
           borderRadius: 20,

@@ -19,7 +19,8 @@ async function renderColdStart(state) {
     const myAddr = isNode ? state?.node_id : WalletManager.getAddress();
 
     if (!myAddr) {
-      container.innerHTML = `<div class="empty-state">⚠ Could not determine your identity.</div>`;
+      container.innerHTML = `<div class="empty-state"><i data-lucide="alert-circle"></i> Could not determine your identity.</div>`;
+      if (window.lucide) lucide.createIcons();
       return;
     }
 
@@ -61,7 +62,8 @@ async function renderColdStart(state) {
     }
 
   } catch (e) {
-    container.innerHTML = `<div class="empty-state">⚠ Could not load ColdStart data. Is the node running?</div>`;
+    container.innerHTML = `<div class="empty-state"><i data-lucide="alert-circle"></i> Could not load ColdStart data. Is the node running?</div>`;
+    if (window.lucide) lucide.createIcons();
   }
 }
 
@@ -73,11 +75,11 @@ function _renderPhaseProgress(phase) {
   const idx = phases.indexOf(phase);
 
   const steps = [
-    { key: 'PHASE_1', icon: '📋', label: 'Candidate' },
-    { key: 'PHASE_2', icon: '🤝', label: 'Vouching' },
-    { key: 'PHASE_3', icon: '🎓', label: 'Probationary' },
-    { key: 'UNDER_OBSERVATION', icon: '👁️', label: 'Observation' },
-    { key: 'FULL_NODE', icon: '⬡', label: 'Full Node' },
+    { key: 'PHASE_1', icon: 'clipboard-list', label: 'Candidate' },
+    { key: 'PHASE_2', icon: 'users', label: 'Vouching' },
+    { key: 'PHASE_3', icon: 'graduation-cap', label: 'Probationary' },
+    { key: 'UNDER_OBSERVATION', icon: 'eye', label: 'Observation' },
+    { key: 'FULL_NODE', icon: 'hexagon', label: 'Full Node' },
   ];
 
   const stepsHtml = steps.map((s, i) => {
@@ -86,7 +88,7 @@ function _renderPhaseProgress(phase) {
     const cls = done ? 'cs-step done' : current ? 'cs-step active' : 'cs-step';
     return `
       <div class="${cls}">
-        <div class="cs-step-icon">${done ? '✓' : s.icon}</div>
+        <div class="cs-step-icon">${done ? '<i data-lucide="check"></i>' : `<i data-lucide="${s.icon}"></i>`}</div>
         <div class="cs-step-label">${s.label}</div>
       </div>
       ${i < steps.length - 1 ? `<div class="cs-step-line ${done ? 'done' : ''}"></div>` : ''}
@@ -96,7 +98,7 @@ function _renderPhaseProgress(phase) {
   return `
     <div class="panel cs-progress-panel">
       <div class="panel-header">
-        <span class="panel-icon">◇</span>
+        <span class="panel-icon"><i data-lucide="zap"></i></span>
         <h2>ColdStart-PoR Onboarding</h2>
         <span class="phase-badge ${_phaseClass(phase)}" style="margin-left:auto">${_phaseLabel(phase)}</span>
       </div>
@@ -127,7 +129,7 @@ function _renderObservation(status, myAddr) {
   return `
     <div class="panel" style="border-color: var(--accent-y)">
       <div class="panel-header">
-        <span class="panel-icon">👁️</span>
+        <span class="panel-icon"><i data-lucide="eye"></i></span>
         <h2>Phase 4 — Under Observation</h2>
       </div>
       <div class="cs-explain">
@@ -144,7 +146,7 @@ function _renderObservation(status, myAddr) {
       </div>
 
       <div class="cs-result" style="background: rgba(245, 158, 11, 0.1); border-color: var(--accent-y); color: var(--accent-y)">
-        ⚡ 50% of voucher stake is now protected. Final graduation releases 100%.
+        <i data-lucide="shield-alert"></i> 50% of voucher stake is now protected. Final graduation releases 100%.
       </div>
     </div>
     ${_renderNodeListPanel()}
@@ -162,7 +164,7 @@ function _renderPhase1(status, myAddr) {
   return `
     <div class="panel">
       <div class="panel-header">
-        <span class="panel-icon">📋</span>
+        <span class="panel-icon"><i data-lucide="clipboard-list"></i></span>
         <h2>Phase 1 — Probationary Tasks</h2>
       </div>
       <div class="cs-explain">
@@ -173,13 +175,13 @@ function _renderPhase1(status, myAddr) {
 
       ${score ? `
         <div class="cs-result ${passed ? 'success' : 'fail'}">
-          ${passed ? '✅ Tasks Passed!' : '❌ Tasks Failed'} — Score: ${score}
+          ${passed ? '<i data-lucide="check-circle"></i> Tasks Passed!' : '<i data-lucide="x-circle"></i> Tasks Failed'} — Score: ${score}
           ${passed ? '<br><small>Awaiting vouching from a trusted node.</small>' : '<br><small>Request new tasks to try again.</small>'}
         </div>
       ` : ''}
 
       <div class="cs-actions">
-        <button class="btn-primary" id="cs-load-tasks-btn">📋 Load My Tasks</button>
+        <button class="btn-primary" id="cs-load-tasks-btn"><i data-lucide="refresh-cw"></i> Load My Tasks</button>
       </div>
 
       <div id="cs-tasks-area"></div>
@@ -195,7 +197,7 @@ function _renderPhase2(status, myAddr) {
   return `
     <div class="panel">
       <div class="panel-header">
-        <span class="panel-icon">🤝</span>
+        <span class="panel-icon"><i data-lucide="users"></i></span>
         <h2>Phase 2 — Awaiting Vouching</h2>
       </div>
       <div class="cs-explain">
@@ -209,7 +211,7 @@ function _renderPhase2(status, myAddr) {
         <label>Your Node ID</label>
         <div class="cs-id-row">
           <code id="cs-my-id">${myAddr}</code>
-          <button class="btn-outline sm-btn" onclick="copyToClipboard('${myAddr}', this, '⎘ Copy')">⎘ Copy</button>
+          <button class="btn-outline sm-btn" onclick="copyToClipboard('${myAddr}', this, '<i data-lucide=\'copy\'></i> Copy')"><i data-lucide="copy"></i> Copy</button>
         </div>
       </div>
 
@@ -251,7 +253,7 @@ function _renderPhase3(status, myAddr) {
   return `
     <div class="panel">
       <div class="panel-header">
-        <span class="panel-icon">🎓</span>
+        <span class="panel-icon"><i data-lucide="graduation-cap"></i></span>
         <h2>Phase 3 — Graduated Participation</h2>
       </div>
       <div class="cs-explain">
@@ -268,12 +270,13 @@ function _renderPhase3(status, myAddr) {
       </div>
 
       <div class="cs-tip">
-        💡 Stay online and connected to peers — your node votes automatically when
+        <i data-lucide="lightbulb" style="color:var(--accent-y)"></i>
+        Stay online and connected to peers — your node votes automatically when
         blocks are proposed. Each honest vote increases your round count.
       </div>
 
       ${rounds >= needed
-      ? `<div class="cs-result success">✅ Phase 3 complete! Awaiting transition to Observation.</div>`
+      ? `<div class="cs-result success"><i data-lucide="check-circle"></i> Phase 3 complete! Awaiting transition to Observation.</div>`
       : ''}
     </div>
     ${_renderNodeListPanel()}
@@ -287,7 +290,7 @@ function _renderFullNode(status, myAddr) {
   return `
     <div class="panel">
       <div class="panel-header">
-        <span class="panel-icon">⬡</span>
+        <span class="panel-icon"><i data-lucide="hexagon"></i></span>
         <h2>Full Node — Admin Panel</h2>
       </div>
       <div class="cs-explain">
@@ -297,7 +300,7 @@ function _renderFullNode(status, myAddr) {
       </div>
 
       <div class="panel-header" style="margin-top:20px">
-        <span class="panel-icon">🤝</span>
+        <span class="panel-icon"><i data-lucide="users"></i></span>
         <h3>Vouch for a Node</h3>
       </div>
       <div class="cs-explain">
@@ -314,19 +317,19 @@ function _renderFullNode(status, myAddr) {
       <div class="send-form" style="margin-top:20px">
         <input type="text" id="cs-vouch-target" class="input-field"
                placeholder="Paste Phase 2 Node ID here…" oninput="window.updateStakePreview(this.value, ${status.reputation || 0.1})" />
-        <button class="btn-primary btn-glow" id="cs-vouch-btn" style="width:100%">🤝 Vouch & Stake</button>
+        <button class="btn-primary btn-glow" id="cs-vouch-btn" style="width:100%">Vouch & Stake</button>
         <div class="form-msg" id="cs-vouch-msg"></div>
       </div>
 
       <div class="panel-header" style="margin-top:20px">
-        <span class="panel-icon">🔴</span>
+        <span class="panel-icon"><i data-lucide="shield-alert"></i></span>
         <h3>Penalize a Malicious Node</h3>
       </div>
       <div class="send-form">
         <input type="text" id="cs-penalize-target" class="input-field"
                placeholder="Paste Node ID to penalize…" />
         <button class="btn-outline" id="cs-penalize-btn" style="border-color: var(--accent-r); color: var(--accent-r)">
-          ⚠ Slash &amp; Ban Node
+          <i data-lucide="ban"></i> Slash &amp; Ban Node
         </button>
         <div class="form-msg" id="cs-penalize-msg"></div>
       </div>
@@ -340,9 +343,9 @@ function _renderNodeListPanel() {
   return `
     <div id="cs-sim-anchor"></div>
     <div class="panel-header" style="margin-top:24px">
-      <span class="panel-icon">◉</span>
+      <span class="panel-icon"><i data-lucide="network"></i></span>
       <h3>All Known Nodes</h3>
-      <button class="btn-outline sm-btn" id="cs-refresh-nodes-btn" style="margin-left:auto">↺ Refresh</button>
+      <button class="btn-outline sm-btn" id="cs-refresh-nodes-btn" style="margin-left:auto"><i data-lucide="rotate-cw"></i> Refresh</button>
     </div>
     <div id="cs-node-list"><div class="empty-state">Loading nodes...</div></div>
   `;
@@ -352,7 +355,7 @@ function _renderBanned() {
   return `
     <div class="panel">
       <div class="cs-result fail" style="margin:0">
-        🚫 This node has been <strong>banned</strong> from the network for malicious behaviour.
+        <i data-lucide="ban"></i> This node has been <strong>banned</strong> from the network for malicious behaviour.
         The voucher's stake has been slashed.
       </div>
     </div>
@@ -405,7 +408,7 @@ async function _loadAndRenderTasks(myAddr) {
                 <span class="task-label">${t.type.replace('_', ' ')}</span>
                 <code class="task-subtext">${t.task_id.slice(0, 8)}</code>
               </div>
-              <div class="task-status-badge" id="status-badge-${t.task_id}">🕒 Pending</div>
+              <div class="task-status-badge" id="status-badge-${t.task_id}"><i data-lucide="clock"></i> Pending</div>
             </div>
             
             <div class="cs-task-card-body">
@@ -421,7 +424,7 @@ async function _loadAndRenderTasks(myAddr) {
       
       <div class="cs-submit-wrap">
         <button class="btn-primary btn-glow" id="cs-submit-tasks-btn" disabled>
-          ✅ Finalize & Submit Results
+          <i data-lucide="check-square"></i> Finalize & Submit Results
         </button>
         <div class="form-msg" id="cs-task-msg"></div>
       </div>
@@ -443,22 +446,24 @@ async function _loadAndRenderTasks(myAddr) {
         const badge = document.getElementById(`status-badge-${t.task_id}`);
 
         if (t.type === 'HASH_PREIMAGE' || t.type === 'VERIFY_HASH') {
-          if (badge) badge.innerHTML = "🔍 Verifying...";
+          if (badge) badge.innerHTML = '<i data-lucide="search"></i> Verifying...';
+          if (window.lucide) lucide.createIcons();
           input.value = await _sha256(t.challenge);
-          if (badge) { badge.innerHTML = "✅ Validated"; badge.className = "task-status-badge success"; }
+          if (badge) { badge.innerHTML = '<i data-lucide="check"></i> Validated'; badge.className = "task-status-badge success"; }
         } else if (t.type === 'POW') {
           const difficulty = t.difficulty || 3;
-          if (badge) badge.innerHTML = "⛏️ Mining...";
+          if (badge) badge.innerHTML = '<i data-lucide="hammer"></i> Mining...';
+          if (window.lucide) lucide.createIcons();
           input.value = await _minePoW(t.challenge, difficulty, (attempts) => {
             if (attempts % 1000 === 0) {
-              if (badge) badge.innerHTML = `⛏️ Mining (${attempts})`;
+              if (badge) badge.innerHTML = `<i data-lucide="hammer"></i> Mining (${attempts})`;
             }
           });
-          if (badge) { badge.innerHTML = "💎 Mined"; badge.className = "task-status-badge success"; }
+          if (badge) { badge.innerHTML = '<i data-lucide="gem"></i> Mined'; badge.className = "task-status-badge success"; }
           input.classList.add('success-text');
         } else if (t.type === 'SIGN_CHALLENGE') {
           const badge = document.getElementById(`status-badge-${t.task_id}`);
-          if (badge) { badge.innerHTML = "✍️ Ready"; badge.className = "task-status-badge success"; }
+          if (badge) { badge.innerHTML = '<i data-lucide="pen-tool"></i> Ready'; badge.className = "task-status-badge success"; }
         }
       } catch (err) {
         console.error(`[ColdStart] Error processing task ${t.task_id}:`, err);
@@ -472,8 +477,9 @@ async function _loadAndRenderTasks(myAddr) {
     const submitBtn = document.getElementById('cs-submit-tasks-btn');
     if (submitBtn) {
       submitBtn.disabled = false;
-      submitBtn.textContent = "🚀 Send Verification Proofs";
+      submitBtn.innerHTML = '<i data-lucide="send"></i> Send Verification Proofs';
     }
+    if (window.lucide) lucide.createIcons();
 
     document.getElementById('cs-submit-tasks-btn')?.addEventListener('click',
       () => _submitTasks(myAddr, tasks));
@@ -512,18 +518,22 @@ async function _submitTasks(myAddr, tasks) {
     const pct = ((result.score || 0) * 100).toFixed(0);
     if (result.passed) {
       msg.className = 'form-msg success';
-      msg.textContent = `✅ Passed! Score: ${pct}%. Advancing to Phase 2…`;
+      msg.innerHTML = `<i data-lucide="check"></i> Passed! Score: ${pct}%. Advancing to Phase 2…`;
+      if (window.lucide) lucide.createIcons();
       setTimeout(() => renderColdStart(_state), 2000);
     } else {
       msg.className = 'form-msg error';
-      msg.textContent = `❌ Score: ${pct}% — need ${Math.round((window._config?.PHASE1_PASS_THRESHOLD || 0.8) * 100)}%+. Try again.`;
+      msg.innerHTML = `<i data-lucide="x"></i> Score: ${pct}% — need ${Math.round((window._config?.PHASE1_PASS_THRESHOLD || 0.8) * 100)}%+. Try again.`;
+      if (window.lucide) lucide.createIcons();
     }
   } catch {
     msg.className = 'form-msg error';
-    msg.textContent = '⚠ Submission failed. Is the node running?';
+    msg.innerHTML = '<i data-lucide="alert-triangle"></i> Submission failed. Is the node running?';
+    if (window.lucide) lucide.createIcons();
   } finally {
     btn.disabled = false;
-    btn.textContent = '✅ Submit All Answers';
+    btn.innerHTML = '<i data-lucide="check"></i> Submit All Answers';
+    if (window.lucide) lucide.createIcons();
   }
 }
 
@@ -595,7 +605,7 @@ async function _handleVouch() {
   const target = document.getElementById('cs-vouch-target').value.trim();
   const msg = document.getElementById('cs-vouch-msg');
   const btn = document.getElementById('cs-vouch-btn');
-  if (!target) { msg.className = 'form-msg error'; msg.textContent = '⚠ Enter a target Node ID.'; return; }
+  if (!target) { msg.className = 'form-msg error'; msg.innerHTML = '<i data-lucide="alert-circle"></i> Enter a target Node ID.'; if (window.lucide) lucide.createIcons(); return; }
 
   btn.disabled = true; btn.textContent = 'Vouching…';
   try {
@@ -605,7 +615,8 @@ async function _handleVouch() {
     // Check for both application-level and framework-level errors
     if (r.error || r.detail) {
       msg.className = 'form-msg error';
-      msg.textContent = `❌ ${r.error || r.detail}`;
+      msg.innerHTML = `<i data-lucide="x"></i> ${r.error || r.detail}`;
+      if (window.lucide) lucide.createIcons();
     } else {
       msg.className = 'form-msg success';
       msg.textContent = `✅ Vouched! Staked ${(r.stake_amount || 0).toFixed(4)} POR for ${_short(target)}.`;
@@ -613,8 +624,9 @@ async function _handleVouch() {
       await _loadNodeList();
     }
   } catch {
-    msg.className = 'form-msg error'; msg.textContent = '⚠ Network error.';
-  } finally { btn.disabled = false; btn.textContent = '🤝 Vouch & Stake'; }
+    msg.className = 'form-msg error'; msg.innerHTML = '<i data-lucide="alert-triangle"></i> Network error.';
+    if (window.lucide) lucide.createIcons();
+  } finally { btn.disabled = false; btn.innerHTML = '<i data-lucide="users"></i> Vouch & Stake'; if (window.lucide) lucide.createIcons(); }
 }
 
 
@@ -624,9 +636,9 @@ async function _handlePenalize() {
   const target = document.getElementById('cs-penalize-target').value.trim();
   const msg = document.getElementById('cs-penalize-msg');
   const btn = document.getElementById('cs-penalize-btn');
-  if (!target) { msg.className = 'form-msg error'; msg.textContent = '⚠ Enter a Node ID.'; return; }
+  if (!target) { msg.className = 'form-msg error'; msg.innerHTML = '<i data-lucide="alert-circle"></i> Enter a Node ID.'; if (window.lucide) lucide.createIcons(); return; }
 
-  if (!confirm(`⚠ Are you sure you want to BAN and SLASH node:\n${target}\n\nThis cannot be undone.`)) return;
+  if (!confirm(`Are you sure you want to BAN and SLASH node:\n${target}\n\nThis cannot be undone.`)) return;
 
   btn.disabled = true; btn.textContent = 'Processing…';
   try {
@@ -638,16 +650,19 @@ async function _handlePenalize() {
     const data = await r.json();
     if (r.ok) {
       msg.className = 'form-msg success';
-      msg.textContent = `🚫 Node ${_short(target)} has been banned and slashed.`;
+      msg.innerHTML = `<i data-lucide="ban"></i> Node ${_short(target)} has been banned and slashed.`;
+      if (window.lucide) lucide.createIcons();
       document.getElementById('cs-penalize-target').value = '';
       await _loadNodeList();
     } else {
       msg.className = 'form-msg error';
-      msg.textContent = `❌ ${data.detail || 'Failed'}`;
+      msg.innerHTML = `<i data-lucide="x"></i> ${data.detail || 'Failed'}`;
+      if (window.lucide) lucide.createIcons();
     }
   } catch {
-    msg.className = 'form-msg error'; msg.textContent = '⚠ Network error.';
-  } finally { btn.disabled = false; btn.textContent = '⚠ Slash & Ban Node'; }
+    msg.className = 'form-msg error'; msg.innerHTML = '<i data-lucide="alert-triangle"></i> Network error.';
+    if (window.lucide) lucide.createIcons();
+  } finally { btn.disabled = false; btn.innerHTML = '<i data-lucide="ban"></i> Slash & Ban Node'; if (window.lucide) lucide.createIcons(); }
 }
 
 
@@ -673,11 +688,12 @@ async function _loadNodeList() {
       return `
         <div class="cs-node-row${isBanned ? ' banned-row' : ''}">
           <div class="cs-node-id"><code title="${n.node_id}">${_short(n.node_id)}</code></div>
-          <span class="phase-badge ${cls}">${_phaseLabel(n.phase)}${isBanned ? ' ☠' : ''}</span>
+          <span class="phase-badge ${cls}">${_phaseLabel(n.phase)}${isBanned ? ' <i data-lucide="skull" style="width:12px;height:12px"></i>' : ''}</span>
           <span class="cs-node-rounds">Rounds: ${n.honest_rounds || 0}</span>
         </div>
       `;
     }).join('');
+    if (window.lucide) lucide.createIcons();
   } catch {
     el.innerHTML = `<div class="empty-state">⚠ Could not load node list.</div>`;
   }
@@ -728,11 +744,11 @@ async function _minePoW(challenge, difficulty, onProgress) {
 }
 
 function _taskIcon(type) {
-  if (type === 'HASH_PREIMAGE') return '🔒';
-  if (type === 'SIGN_CHALLENGE') return '✍️';
-  if (type === 'VERIFY_HASH') return '🔍';
-  if (type === 'POW') return '⛏️';
-  return '📝';
+  if (type === 'HASH_PREIMAGE') return '<i data-lucide="lock"></i>';
+  if (type === 'SIGN_CHALLENGE') return '<i data-lucide="pen-tool"></i>';
+  if (type === 'VERIFY_HASH') return '<i data-lucide="search"></i>';
+  if (type === 'POW') return '<i data-lucide="hammer"></i>';
+  return '<i data-lucide="file-text"></i>';
 }
 
 function _phaseLabel(phase) {
@@ -753,14 +769,14 @@ function _phaseClass(phase) {
 
 // ── Dynamic Staking Helpers ──────────────────────────────────────────────────
 
-window.updateStakePreview = async function(targetId, myRep) {
+window.updateStakePreview = async function (targetId, myRep) {
   const wrap = document.getElementById('cs-dynamic-stake-wrap');
   if (!wrap || !targetId || targetId.length < 10) return;
 
   try {
     const nodes = await api.getRegistry();
     const target = nodes[targetId];
-    
+
     if (!target) {
       wrap.innerHTML = `<div class="cs-stake-preview-card"><div class="empty-state sm">Target Node Not Found</div></div>`;
       return;

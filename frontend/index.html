@@ -7,18 +7,20 @@
   <meta name="description" content="Proof-of-Reputation decentralized blockchain node dashboard. Monitor your node phase, wallet balance, chain, and peers." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/static/css/style.css" />
   <!-- Cryptography for Browser-Side Wallets -->
   <script src="https://cdn.jsdelivr.net/npm/tweetnacl@1.0.3/nacl.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/ed25519-js@1.1.0/index.min.js"></script>
+  <!-- Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 <body>
   <!-- ── Header ────────────────────────────────────────────────── -->
   <header class="topbar" id="topbar">
     <div class="topbar-left">
       <div class="logo">
-        <span class="logo-icon">⬡</span>
+        <span class="logo-icon"><i data-lucide="hexagon"></i></span>
         <span class="logo-text">POR<span class="logo-accent">Chain</span></span>
       </div>
       <div class="node-id-pill" id="node-id-pill" title="Your Node ID">
@@ -29,17 +31,29 @@
     <div class="topbar-right">
       <div class="phase-badge" id="phase-badge">—</div>
       <div class="wallet-badge" id="wallet-badge">
-        <span class="wallet-icon">◎</span>
+        <span class="wallet-icon"><i data-lucide="wallet"></i></span>
         <span id="wallet-balance">0.00</span>
         <span class="wallet-unit">POR</span>
         <span class="wallet-staked" id="wallet-staked-chip"></span>
       </div>
-      <div class="wallet-badge" id="rep-badge" style="background: rgba(30,30,36,0.6); border-color: #333;">
-        <span class="wallet-icon" style="color: #ffd700;">★</span>
-        <span id="rep-score">0.05</span>
-        <span class="wallet-unit">REP</span>
+      <!-- Reputation Gauge -->
+      <div id="rep-gauge-wrap" style="display:flex;align-items:center;gap:8px;background:rgba(30,30,36,0.6);border:1px solid #333;border-radius:100px;padding:5px 14px 5px 8px">
+        <svg id="rep-gauge-svg" width="32" height="32" viewBox="0 0 32 32" style="flex-shrink:0">
+          <circle cx="16" cy="16" r="12" fill="none" stroke="#1e2d45" stroke-width="3"/>
+          <circle id="rep-gauge-arc" cx="16" cy="16" r="12" fill="none"
+            stroke="#D4F832" stroke-width="3"
+            stroke-dasharray="75.4" stroke-dashoffset="75.4"
+            stroke-linecap="round"
+            transform="rotate(-90 16 16)"
+            style="transition: stroke-dashoffset 0.8s cubic-bezier(.4,0,.2,1), stroke 0.5s"/>
+          <text x="16" y="20" text-anchor="middle" font-size="8" font-weight="700" fill="#f0f4ff" font-family="JetBrains Mono,monospace" id="rep-gauge-pct">0%</text>
+        </svg>
+        <div>
+          <div style="font-size:10px;color:#506080;text-transform:uppercase;letter-spacing:1px">Reputation</div>
+          <div style="font-size:13px;font-weight:700;color:#f0f4ff" id="rep-score">0.000</div>
+        </div>
       </div>
-      <button class="refresh-btn" id="refresh-btn" title="Refresh">⟳</button>
+      <button class="refresh-btn" id="refresh-btn" title="Refresh"><i data-lucide="rotate-cw" style="width:18px;height:18px"></i></button>
     </div>
   </header>
 
@@ -56,19 +70,22 @@
     <aside class="sidebar" id="sidebar">
       <nav class="sidenav">
         <a href="#" class="nav-item active" data-view="dashboard" id="nav-dashboard">
-          <span class="nav-icon">◈</span> Dashboard
+          <span class="nav-icon"><i data-lucide="layout-dashboard"></i></span> Dashboard
         </a>
         <a href="#" class="nav-item" data-view="chain" id="nav-chain">
-          <span class="nav-icon">⛓</span> Chain
+          <span class="nav-icon"><i data-lucide="blocks"></i></span> Chain
         </a>
         <a href="#" class="nav-item" data-view="wallet" id="nav-wallet">
-          <span class="nav-icon">◎</span> Wallet
+          <span class="nav-icon"><i data-lucide="wallet"></i></span> Wallet
         </a>
         <a href="#" class="nav-item" data-view="peers" id="nav-peers">
-          <span class="nav-icon">◉</span> Peers
+          <span class="nav-icon"><i data-lucide="users"></i></span> Peers
         </a>
         <a href="#" class="nav-item" data-view="coldstart" id="nav-coldstart">
-          <span class="nav-icon">◇</span> ColdStart
+          <span class="nav-icon"><i data-lucide="zap"></i></span> ColdStart
+        </a>
+        <a href="#" class="nav-item" data-view="ml" id="nav-ml">
+          <span class="nav-icon"><i data-lucide="brain"></i></span> ML Oracle
         </a>
       </nav>
       <div class="sidebar-footer">
@@ -85,61 +102,144 @@
       <!-- Dashboard View -->
       <section class="view active" id="view-dashboard">
         <h1 class="view-title">Node Overview</h1>
+        
         <div class="stat-grid" id="stat-grid">
           <div class="stat-card" id="stat-phase">
             <div class="stat-label">Phase</div>
-            <div class="stat-value" id="stat-phase-val">—</div>
+            <div class="stat-value"><span id="stat-phase-val" class="skeleton skeleton-text"></span></div>
+          </div>
+          <div class="stat-card" id="stat-uptime">
+            <div class="stat-label">Uptime</div>
+            <div class="stat-value"><span id="stat-uptime-val" class="skeleton skeleton-val"></span></div>
           </div>
           <div class="stat-card" id="stat-chain">
             <div class="stat-label">Chain Height</div>
-            <div class="stat-value" id="stat-chain-val">—</div>
+            <div class="stat-value"><span id="stat-chain-val" class="skeleton skeleton-val"></span></div>
           </div>
-          <div class="stat-card" id="stat-peers">
-            <div class="stat-label">Peers</div>
-            <div class="stat-value" id="stat-peers-val">—</div>
+          <div class="stat-card" id="stat-mempool">
+            <div class="stat-label">Mempool Size</div>
+            <div class="stat-value"><span id="stat-mempool-val" class="skeleton skeleton-val"></span></div>
           </div>
           <div class="stat-card" id="stat-balance">
             <div class="stat-label">Balance</div>
-            <div class="stat-value" id="stat-balance-val">—</div>
+            <div class="stat-value"><span id="stat-balance-val" class="skeleton skeleton-val"></span></div>
+          </div>
+          <div class="stat-card" id="stat-blocktime">
+            <div class="stat-label">Avg Block Time</div>
+            <div class="stat-value"><span id="stat-blocktime-val" class="skeleton skeleton-val"></span></div>
+            <div class="stat-sub" id="stat-blocktime-sub">seconds per block</div>
           </div>
         </div>
 
-        <!-- Eligibility Panel -->
-        <div class="panel" id="eligibility-panel">
-          <div class="panel-header">
-            <span class="panel-icon">🔐</span>
-            <h2>Eligibility Flags <span class="zkp-tag">ZKP-Ready</span></h2>
-          </div>
-          <div class="eligibility-grid" id="eligibility-grid">
-            <div class="elig-item" id="elig-vouch">
-              <div class="elig-dot" id="elig-vouch-dot"></div>
-              <span>Can Vouch</span>
+        <div class="dashboard-main">
+          <!-- Chain Growth Sparkline -->
+          <div class="panel dashboard-full" id="sparkline-panel">
+            <div class="panel-header">
+              <span class="panel-icon"><i data-lucide="trending-up"></i></span>
+              <h2>Chain Growth</h2>
+              <span id="sparkline-label" style="margin-left:auto;font-size:11px;color:var(--text-3)">Last 20 blocks</span>
             </div>
-            <div class="elig-item" id="elig-vote">
-              <div class="elig-dot" id="elig-vote-dot"></div>
-              <span>Can Vote</span>
-            </div>
-            <div class="elig-item" id="elig-propose">
-              <div class="elig-dot" id="elig-propose-dot"></div>
-              <span>Can Propose</span>
+            <canvas id="chain-sparkline" height="50" style="width:100%;display:block;border-radius:6px"></canvas>
+            <div style="display:flex;justify-content:space-between;margin-top:8px;font-size:10px;color:var(--text-3)">
+              <span id="sparkline-oldest"></span>
+              <span id="sparkline-newest"></span>
             </div>
           </div>
-          <p class="zkp-note">⚡ Raw reputation score is never transmitted. Only eligibility flags are shared — ZKP proofs coming in Phase 7.</p>
-        </div>
 
-        <!-- Node Identity -->
-        <div class="panel" id="identity-panel">
-          <div class="panel-header">
-            <span class="panel-icon">🪪</span>
-            <h2>Node Identity</h2>
+          <!-- Live Consensus Round -->
+          <div class="panel" id="consensus-panel" style="margin-bottom:0">
+            <div class="panel-header">
+              <span class="panel-icon"><i data-lucide="git-branch-plus"></i></span>
+              <h2>Consensus Round</h2>
+              <span id="consensus-status-pill" class="consensus-pill idle">Idle</span>
+              <button class="view-audit-btn" id="open-audit-btn" title="Open Audit Feed">
+                <i data-lucide="terminal" style="width:14px;height:14px"></i> View Details
+              </button>
+            </div>
+            <div class="consensus-body">
+              <div class="consensus-meta" id="consensus-meta" style="grid-template-columns: repeat(2, 1fr); gap: 8px">
+                <div class="cmeta-item" style="padding: 8px 12px">
+                  <div class="cmeta-label">Round</div>
+                  <div class="cmeta-val" id="c-round">—</div>
+                </div>
+                <div class="cmeta-item" style="padding: 8px 12px">
+                  <div class="cmeta-label">Proposer</div>
+                  <div class="cmeta-val" id="c-proposer">—</div>
+                </div>
+                <div class="cmeta-item" style="padding: 8px 12px">
+                  <div class="cmeta-label">Votes</div>
+                  <div class="cmeta-val" id="c-votes">—</div>
+                </div>
+                <div class="cmeta-item" style="padding: 8px 12px">
+                  <div class="cmeta-label">Outcome</div>
+                  <div class="cmeta-val" id="c-outcome">—</div>
+                </div>
+                <div class="cmeta-item" style="padding: 8px 12px; grid-column: span 2">
+                  <div class="cmeta-label">Block Hash</div>
+                  <div class="cmeta-val" id="c-hash" style="font-family: 'JetBrains Mono', monospace; font-size: 11px;">—</div>
+                </div>
+              </div>
+              <div style="margin-top:12px">
+                <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text-3);margin-bottom:4px">
+                  <span>Voting Progress</span>
+                  <span id="c-vote-pct">0%</span>
+                </div>
+                <div style="height:4px;background:var(--bg-3);border-radius:99px;overflow:hidden">
+                  <div id="c-vote-bar" style="height:100%;width:0%;background:var(--grad-main);border-radius:99px;transition:width 0.6s ease"></div>
+                </div>
+              </div>
+              <div id="consensus-log" style="margin-top:12px;display:flex;flex-direction:column;gap:4px;max-height:100px;overflow-y:auto;font-size:11px"></div>
+            </div>
           </div>
-          <div class="identity-row">
-            <span class="id-label">Node ID</span>
-            <code class="id-value" id="full-node-id">—</code>
-          </div>
-          <div class="identity-row">
-            <span class="id-label">Public Key</span>
-            <code class="id-value" id="full-pubkey">—</code>
+
+          <!-- Side Stack: Eligibility + Identity -->
+          <div style="display:flex;flex-direction:column;gap:16px">
+            <!-- Eligibility Panel -->
+            <div class="panel" id="eligibility-panel" style="margin-bottom:0;flex:1">
+              <div class="panel-header">
+                <span class="panel-icon"><i data-lucide="shield-check"></i></span>
+                <h2>Eligibility</h2>
+              </div>
+              <div class="eligibility-grid" id="eligibility-grid" style="gap:8px">
+                <div class="elig-item" id="elig-vouch" style="padding:8px 12px;flex:1">
+                  <div class="elig-dot" id="elig-vouch-dot"></div>
+                  <span>Vouch</span>
+                </div>
+                <div class="elig-item" id="elig-vote" style="padding:8px 12px;flex:1">
+                  <div class="elig-dot" id="elig-vote-dot"></div>
+                  <span>Vote</span>
+                </div>
+                <div class="elig-item" id="elig-propose" style="padding:8px 12px;flex:1">
+                  <div class="elig-dot" id="elig-propose-dot"></div>
+                  <span>Propose</span>
+                </div>
+              </div>
+              <div id="staking-progress-wrap" style="margin-top:16px;display:none;">
+                <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text-3);margin-bottom:4px">
+                  <span>Phase 2 Staking Progress</span>
+                  <span id="stake-prog-text">0/0</span>
+                </div>
+                <div style="height:4px;background:var(--bg-3);border-radius:99px;overflow:hidden">
+                  <div id="stake-prog-bar" style="height:100%;width:0%;background:var(--accent-v);border-radius:99px;transition:width 0.6s ease"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Node Identity -->
+            <div class="panel" id="identity-panel" style="margin-bottom:0">
+              <div class="panel-header">
+                <span class="panel-icon"><i data-lucide="fingerprint"></i></span>
+                <h2>Node Identity</h2>
+              </div>
+              <div class="identity-row" style="margin-bottom:8px">
+                <span class="id-label" style="font-size:10px">Node ID</span>
+                <code class="id-value" id="full-node-id" style="font-size:10px"><span class="skeleton skeleton-text" style="width:120px"></span></code>
+              </div>
+              <div class="identity-row">
+                <span class="id-label" style="font-size:10px">Pubkey</span>
+                <code class="id-value" id="full-pubkey" style="font-size:10px"><span class="skeleton skeleton-text" style="width:120px"></span></code>
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -163,7 +263,7 @@
               <div class="wallet-address-label">Your Wallet Address (= Node ID)</div>
               <code class="wallet-address" id="wallet-address">—</code>
             </div>
-            <button class="copy-addr-btn" id="copy-address-btn">⎘ Copy Address</button>
+            <button class="copy-addr-btn" id="copy-address-btn" style="display:flex;align-items:center;gap:6px"><i data-lucide="copy" style="width:14px;height:14px"></i> Copy Address</button>
           </div>
 
           <div class="wallet-balance-grid">
@@ -191,13 +291,13 @@
         <!-- ── How to Receive ──────────────────────────────────────── -->
         <div class="panel receive-panel">
           <div class="panel-header">
-            <span class="panel-icon">↓</span>
+            <span class="panel-icon"><i data-lucide="arrow-down-left"></i></span>
             <h2>Receive POR</h2>
           </div>
           <p class="receive-info">Share your <strong>Wallet Address</strong> (Node ID) with the sender. They paste it into the Send form on their node.</p>
           <div class="receive-addr-box">
             <code id="receive-addr-display">—</code>
-            <button class="btn-outline" id="copy-receive-btn">⎘ Copy</button>
+            <button class="btn-outline" id="copy-receive-btn" style="display:flex;align-items:center;gap:6px"><i data-lucide="copy" style="width:14px;height:14px"></i> Copy</button>
           </div>
           <div class="how-steps">
             <div class="step"><span class="step-num">1</span> Copy your address above</div>
@@ -211,7 +311,7 @@
         <!-- ── Send Tokens ─────────────────────────────────────────── -->
         <div class="panel">
           <div class="panel-header">
-            <span class="panel-icon">↑</span>
+            <span class="panel-icon"><i data-lucide="arrow-up-right"></i></span>
             <h2>Send POR Tokens</h2>
           </div>
 
@@ -219,10 +319,10 @@
             <label class="field-label">Recipient Node ID (Wallet Address)</label>
             <div class="input-row">
               <input type="text" id="send-to" class="input-field" placeholder="Paste recipient's full Node ID here…" />
-              <button class="btn-outline icon-btn" id="paste-btn" title="Paste from clipboard">⎘ Paste</button>
+               <button class="btn-outline icon-btn" id="paste-btn" title="Paste from clipboard"><i data-lucide="clipboard" style="width:14px;height:14px"></i> Paste</button>
             </div>
             <div id="sanction-warning" class="sanction-alert" style="display:none">
-                <span class="alert-icon">⚠️</span>
+                <span class="alert-icon"><i data-lucide="alert-triangle"></i></span>
                 <div class="alert-text">
                     <strong>RECIPIENT BANNED:</strong> This node has been blacklisted for malicious activity. Any funds sent to this address will be permanently locked and cannot be recovered.
                 </div>
@@ -240,12 +340,12 @@
               <button class="quick-amount" data-amount="50">50</button>
             </div>
 
-            <button class="btn-primary send-btn-full" id="send-btn">↑ Send POR</button>
+            <button class="btn-primary send-btn-full" id="send-btn" style="display:flex;align-items:center;justify-content:center;gap:8px"><i data-lucide="send" style="width:16px;height:16px"></i> Send POR</button>
             <div class="form-msg" id="send-msg"></div>
 
             <div class="send-note">
-              🔒 Transactions are signed with your private key and broadcast to all peers.<br>
-              ⚠ Requires at least 1 connected peer to propagate on-chain.
+              <span style="display:flex;align-items:center;gap:6px;margin-bottom:4px"><i data-lucide="lock" style="width:13px;height:13px;flex-shrink:0"></i> Transactions are signed with your private key and broadcast to all peers.</span>
+              <span style="display:flex;align-items:center;gap:6px"><i data-lucide="alert-circle" style="width:13px;height:13px;flex-shrink:0"></i> Requires at least 1 connected peer to propagate on-chain.</span>
             </div>
           </div>
         </div>
@@ -253,9 +353,9 @@
         <!-- ── Transaction History ────────────────────────────────── -->
         <div class="panel">
           <div class="panel-header">
-            <span class="panel-icon">📋</span>
+            <span class="panel-icon"><i data-lucide="history"></i></span>
             <h2>Transaction History</h2>
-            <button class="btn-outline sm-btn" id="refresh-tx-btn" style="margin-left:auto">↺ Refresh</button>
+            <button class="btn-outline sm-btn" id="refresh-tx-btn" style="margin-left:auto"><i data-lucide="rotate-cw" style="width:14px;height:14px"></i> Refresh</button>
           </div>
           <div class="tx-list" id="tx-list">
             <div class="empty-state">No transactions yet</div>
@@ -266,9 +366,20 @@
       <!-- Peers View -->
       <section class="view" id="view-peers">
         <h1 class="view-title">Peer Network</h1>
+
+        <!-- Network Topology -->
+        <div class="panel topology-panel" id="topology-panel" style="margin-bottom:24px">
+          <div class="panel-header">
+            <span class="panel-icon"><i data-lucide="network"></i></span>
+            <h2>Network Topology</h2>
+            <span id="topology-count" style="margin-left:auto;font-size:10px;color:var(--text-3)">Scanning...</span>
+          </div>
+          <canvas id="topology-canvas" style="height: 200px"></canvas>
+          <div id="topo-tooltip" class="node-label-popup"></div>
+        </div>
         <div class="panel">
           <div class="panel-header">
-            <span class="panel-icon">+</span>
+            <span class="panel-icon"><i data-lucide="user-plus"></i></span>
             <h2>Add Peer</h2>
           </div>
           <div class="send-form">
@@ -279,7 +390,7 @@
         </div>
         <div class="panel">
           <div class="panel-header">
-            <span class="panel-icon">◉</span>
+            <span class="panel-icon"><i data-lucide="network"></i></span>
             <h2>Connected Peers</h2>
           </div>
           <div class="peer-list" id="peer-list">
@@ -295,11 +406,80 @@
           <div class="empty-state">Loading phase info...</div>
         </div>
       </section>
+
+      <!-- ML Oracle View -->
+      <section class="view" id="view-ml">
+        <h1 class="view-title">ML Misbehavior Oracle</h1>
+        
+        <div class="ml-status-hero" id="ml-hero">
+           <div class="hero-icon"><i data-lucide="brain"></i></div>
+           <div class="hero-text">
+             <h2 id="ml-status-title">Oracle Offline</h2>
+             <p id="ml-status-desc">The anomaly detection service is not running.</p>
+           </div>
+        </div>
+
+        <div class="stat-grid">
+           <div class="stat-card">
+             <div class="stat-label">Model Health</div>
+             <div class="stat-value" id="ml-health-val">—</div>
+           </div>
+           <div class="stat-card">
+             <div class="stat-label">Nodes Tracked</div>
+             <div class="stat-value" id="ml-nodes-val">0</div>
+           </div>
+           <div class="stat-card">
+             <div class="stat-label">Anomalies Found</div>
+             <div class="stat-value" id="ml-anomalies-val">0</div>
+           </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-header">
+            <span class="panel-icon"><i data-lucide="binary"></i></span>
+            <h2>Algorithm Diagnostics</h2>
+          </div>
+          <div class="diag-list">
+             <div class="diag-item">
+                <span class="diag-label">Model Type</span>
+                <span class="diag-val">Isolation Forest (Unsupervised)</span>
+             </div>
+             <div class="diag-item">
+                <span class="diag-label">Contamination Factor</span>
+                <span class="diag-val" id="ml-contamination-val">0.10</span>
+             </div>
+             <div class="diag-item">
+                <span class="diag-label">Anomaly Threshold</span>
+                <span class="diag-val" id="ml-threshold-val">-0.20</span>
+             </div>
+             <div class="diag-item">
+                <span class="diag-label">Total Events Processed</span>
+                <span class="diag-val" id="ml-events-val">0</span>
+             </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-header">
+            <span class="panel-icon"><i data-lucide="activity"></i></span>
+            <h2>Recent Activity</h2>
+          </div>
+          <div id="ml-activity" class="empty-state">No anomalies detected in this session.</div>
+        </div>
+      </section>
     </div><!-- /content -->
 
-    <!-- ── Audit Sidebar ───────────────────────────────────────────── -->
-    <aside class="audit-panel" style="width: 380px; min-width: 380px; border-left: 1px solid var(--border); background: var(--bg-1); display: flex; flex-direction: column; overflow: hidden;">
-      <iframe src="/static/audit.html" style="width: 100%; height: 100%; border: none;"></iframe>
+    <!-- ── Audit Side-Drawer ───────────────────────────────────────────── -->
+    <aside class="audit-panel hidden" id="audit-drawer">
+      <div class="audit-header">
+        <h3>Live Audit Feed</h3>
+        <button class="audit-close-btn" id="close-audit-btn" title="Close">
+          <i data-lucide="x" style="width:18px;height:18px"></i>
+        </button>
+      </div>
+      <div style="flex:1;position:relative;overflow:hidden">
+        <iframe src="/static/audit.html" style="width: 100%; height: 100%; border: none;"></iframe>
+      </div>
     </aside>
 
   </main>
@@ -311,6 +491,16 @@
   <script src="/static/js/peers.js"></script>
   <script src="/static/js/coldstart.js"></script>
   <script src="/static/js/simulate.js"></script>
+  <script src="/static/js/ml_oracle.js"></script>
+  <script src="/static/js/dashboard_widgets.js"></script>
   <script src="/static/js/app.js"></script>
+  <script>
+    // Redraw sparkline on resize so canvas stays crisp
+    window.addEventListener('resize', () => {
+      if (typeof api !== 'undefined' && typeof drawSparkline !== 'undefined') {
+        api.getChain().then(drawSparkline).catch(() => {});
+      }
+    });
+  </script>
 </body>
 </html>

@@ -15,13 +15,13 @@ function _injectSimulateModal() {
     <div class="sim-modal" id="sim-modal-box" role="dialog" aria-modal="true" aria-labelledby="sim-modal-title">
       <div class="sim-modal-header">
         <div class="sim-header-left">
-          <span class="sim-header-icon">⚠</span>
+          <span class="sim-header-icon"><i data-lucide="alert-triangle"></i></span>
           <div>
             <h2 id="sim-modal-title">Malicious Block Simulation</h2>
             <p class="sim-subtitle">Demonstrating consensus rejection, blacklisting & reputation slashing</p>
           </div>
         </div>
-        <button class="sim-close-btn" id="sim-close-btn" aria-label="Close">✕</button>
+        <button class="sim-close-btn" id="sim-close-btn" aria-label="Close"><i data-lucide="x"></i></button>
       </div>
 
       <div class="sim-modal-body" id="sim-modal-body">
@@ -74,6 +74,7 @@ async function runMaliciousSimulation() {
     }
 
     _renderSimReport(data);
+    if (window.lucide) lucide.createIcons();
   } catch (e) {
     _renderSimError('Network error — is the node running?');
   }
@@ -89,7 +90,7 @@ function _short(id) {
 function _renderSimError(msg) {
   document.getElementById('sim-modal-body').innerHTML = `
     <div class="sim-error-box">
-      <span class="sim-error-icon">✕</span>
+      <span class="sim-error-icon"><i data-lucide="alert-circle"></i></span>
       <p>${msg}</p>
     </div>`;
 }
@@ -117,7 +118,7 @@ function _renderSimReport(d) {
       <div class="sim-step ${det.detected ? 'detected' : 'warn'}">
         <div class="sim-step-dot"></div>
         <div class="sim-step-content">
-          <strong>${det.detected ? '🔍 Malicious Block Detected' : '⚠ Block Passed Validation'}</strong>
+          <strong>${det.detected ? '<i data-lucide="search"></i> Malicious Block Detected' : '<i data-lucide="alert-triangle"></i> Block Passed Validation'}</strong>
           <span>${det.rejection_reason}</span>
         </div>
       </div>
@@ -174,7 +175,7 @@ function _renderSimReport(d) {
         </div>
         <div class="sim-outcome-item">
           <div class="sim-outcome-label">Phase After</div>
-          <span class="sim-badge badge-red">BANNED ☠</span>
+          <span class="sim-badge badge-red">BANNED <i data-lucide="skull" style="width:12px;height:12px"></i></span>
         </div>
         <div class="sim-outcome-item">
           <div class="sim-outcome-label">Reputation Before</div>
@@ -191,7 +192,7 @@ function _renderSimReport(d) {
       </div>
       ${d.slash_txs?.length > 0 ? `
         <div class="sim-slash-tx">
-          ⛓ Slash TXs mined on-chain: 
+          <i data-lucide="link"></i> Slash TXs mined on-chain: 
           ${d.slash_txs.map(tx => `<code>${tx}</code>`).join(', ')}
         </div>
       ` : ''}
@@ -267,7 +268,7 @@ function _createBtn(parent, id, state, asForm = false) {
       wrapper.innerHTML = `
         <div class="field-label" style="color:var(--accent-r)">DANGER ZONE: Test Network Resilience</div>
         <button class="sim-trigger-btn" style="width:100%; justify-content:center;">
-          <span class="sim-trigger-icon">☠</span>
+          <span class="sim-trigger-icon"><i data-lucide="skull"></i></span>
           Simulate Malicious Block (Attacker = This Node)
         </button>
       `;
@@ -277,7 +278,7 @@ function _createBtn(parent, id, state, asForm = false) {
       wrapper.innerHTML = `
         <div class="stat-label">Threat Simulation</div>
         <button class="sim-trigger-btn" title="Simulate a malicious block proposal from this node">
-          <span class="sim-trigger-icon">⚠</span>
+          <span class="sim-trigger-icon"><i data-lucide="alert-triangle"></i></span>
           Simulate Attack
         </button>
       `;
@@ -312,6 +313,7 @@ async function runMaliciousSimulation(attackerId = null) {
     }
 
     _renderSimReport(data);
+    if (window.lucide) lucide.createIcons();
   } catch (e) {
     _renderSimError('Network error — is the node running?');
   }

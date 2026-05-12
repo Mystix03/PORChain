@@ -1,5 +1,6 @@
 "use client";
 import { useState, useCallback, useRef, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { useStore } from "@/store/useStore";
 import { toast } from "sonner";
 import {
@@ -11,6 +12,7 @@ import {
   Cpu,
   ThumbsUp,
   ThumbsDown,
+  PartyPopper,
 } from "lucide-react";
 const useWallet = () => ({ connected: false, getAnchorProvider: () => null });
 const useNetworkConfig = () => ({ config: null });
@@ -164,8 +166,8 @@ export default function Merit() {
         message: `Task #${taskId} — proof verified`, time: "just now",
       });
       if (count >= 5) {
-        toast.success("🎉 Phase 1 complete!", {
-          description: `All 5 tasks done · Find a voucher to advance`,
+        toast.success("Phase 1 complete!", {
+          description: `All 5 tasks done · Find a helper to advance`,
           duration: 4000,
         });
         setTimeout(() => setPhase(2), 700);
@@ -410,7 +412,11 @@ export default function Merit() {
         {Stepper}
 
         {/* Progress card */}
-        <div style={{ background: "white", borderRadius: 20, padding: "18px 16px", marginBottom: 16, boxShadow: "0 1px 6px rgba(0,0,0,0.06)" }}>
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          style={{ background: "white", borderRadius: 20, padding: "18px 16px", marginBottom: 16, boxShadow: "0 1px 6px rgba(0,0,0,0.06)" }}
+        >
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
             <div>
               <div style={{ fontSize: 17, fontWeight: 800, color: "#0D1421" }}>Probationary Tasks</div>
@@ -418,16 +424,21 @@ export default function Merit() {
             </div>
             <div style={{ background: "#EEF3FF", borderRadius: 12, padding: "6px 12px" }}>
               <span style={{ fontSize: 15, fontWeight: 800, color: "#0052FF" }}>
-                {verifiedCount}<span style={{ fontWeight: 500, fontSize: 12 }}>/20</span>
+                {verifiedCount}<span style={{ fontWeight: 500, fontSize: 12 }}>/5</span>
               </span>
             </div>
           </div>
           <div style={{ height: 6, background: "#F3F4F6", borderRadius: 3, overflow: "hidden" }}>
-            <div style={{
-              height: "100%",
-              background: "linear-gradient(90deg,#0038E8,#0052FF,#4D8BFF)",
-              borderRadius: 3, width: `${progressPct}%`, transition: "width 0.5s ease",
-            }} />
+            <motion.div 
+              initial={{ width: 0 }}
+              animate={{ width: `${progressPct}%` }}
+              transition={{ duration: 0.8, ease: "easeOut" }}
+              style={{
+                height: "100%",
+                background: "linear-gradient(90deg,#0038E8,#0052FF,#4D8BFF)",
+                borderRadius: 3,
+              }} 
+            />
           </div>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 8 }}>
             <div style={{ fontSize: 10, color: "#9CA3AF" }}>
@@ -436,23 +447,33 @@ export default function Merit() {
             </div>
             <div style={{ fontSize: 11, color: "#9CA3AF" }}>{progressPct}% complete</div>
           </div>
-        </div>
+        </motion.div>
 
         {/* Task list */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        <motion.div 
+          layout
+          style={{ display: "flex", flexDirection: "column", gap: 8 }}
+        >
           {TASKS.map((task) => {
             const done    = taskStatuses[task.id] === "verified";
             const solving = hashSolver.taskId === task.id;
 
-            // ── Expanded hash solver card ──────────────────────────────────────
-            if (solving) return (
-              <div key={task.id} style={{
-                background: "white", borderRadius: 16, overflow: "hidden",
-                boxShadow: hashSolver.found
-                  ? "0 0 0 2px #05C48F, 0 6px 24px rgba(5,196,143,0.18)"
-                  : "0 0 0 2px #0052FF30, 0 4px 16px rgba(0,82,255,0.14)",
-                transition: "box-shadow 0.3s ease",
-              }}>
+              // ── Expanded hash solver card ──────────────────────────────────────
+              if (solving) return (
+                <motion.div 
+                  layout
+                  key={`solving-${task.id}`}
+                  initial={{ opacity: 0, scale: 0.98 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.98 }}
+                  style={{
+                    background: "white", borderRadius: 16, overflow: "hidden",
+                    boxShadow: hashSolver.found
+                      ? "0 0 0 2px #05C48F, 0 6px 24px rgba(5,196,143,0.18)"
+                      : "0 0 0 2px #0052FF30, 0 4px 16px rgba(0,82,255,0.14)",
+                    transition: "box-shadow 0.3s ease",
+                  }}
+                >
                 {/* Task header row */}
                 <div style={{ padding: "12px 14px 8px", display: "flex", alignItems: "center", gap: 10 }}>
                   <div style={{ width: 32, height: 32, borderRadius: 9, background: "#EEF3FF", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
@@ -537,14 +558,21 @@ export default function Merit() {
               </div>
             );
 
-            // ── Normal task card ───────────────────────────────────────────────
-            return (
-              <div key={task.id} style={{
-                background: "white", borderRadius: 16, padding: "14px 14px",
-                boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
-                display: "flex", alignItems: "center", gap: 12,
-                opacity: done ? 0.55 : 1,
-              }}>
+              // ── Normal task card ───────────────────────────────────────────────
+              return (
+                <motion.div 
+                  layout
+                  key={task.id}
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: i * 0.05 }}
+                  style={{
+                    background: "white", borderRadius: 16, padding: "14px 14px",
+                    boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
+                    display: "flex", alignItems: "center", gap: 12,
+                    opacity: done ? 0.55 : 1,
+                  }}
+                >
                 <div style={{
                   width: 36, height: 36, borderRadius: 10,
                   background: done ? "#ECFDF5" : "#F9FAFB",
@@ -608,7 +636,9 @@ export default function Merit() {
 
         {voucherStatus === "accepted" ? (
           <div style={{ background: "#ECFDF5", border: "2px solid #05C48F", borderRadius: 20, padding: "32px 20px", textAlign: "center" }}>
-            <div style={{ fontSize: 48, marginBottom: 12 }}>🎉</div>
+            <div style={{ width: 64, height: 64, borderRadius: "50%", background: "white", border: "2px solid #05C48F", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
+              <PartyPopper size={32} color="#05C48F" />
+            </div>
             <div style={{ fontSize: 18, fontWeight: 800, color: "#0D1421", marginBottom: 6 }}>Helper Accepted!</div>
             <div style={{ fontSize: 13, color: "#6B7280" }}>Advancing to Voting Rounds…</div>
           </div>

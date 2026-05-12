@@ -110,7 +110,7 @@ export default defineConfig({
       clientFiles: ['./src/app/**/*', './src/app/root.tsx', './src/app/routes.ts'],
     },
     proxy: {
-      '/node': { target: 'http://127.0.0.1:5000', changeOrigin: true },
+      '/node/': { target: 'http://127.0.0.1:5000', changeOrigin: true },
       '/node_state': { target: 'http://127.0.0.1:5000', changeOrigin: true },
       '/peers': { target: 'http://127.0.0.1:5000', changeOrigin: true },
       '/config': { target: 'http://127.0.0.1:5000', changeOrigin: true },

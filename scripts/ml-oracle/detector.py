@@ -68,6 +68,7 @@ class VotingAnomalyDetector:
         self._model: Optional[IsolationForest]  = None
         self._total_events = 0
         self._last_fit_at  = 0
+        self._anomalies_found = 0
 
     # ── Event ingestion ────────────────────────────────────────────────────
 
@@ -173,6 +174,7 @@ class VotingAnomalyDetector:
         is_bad = score < self.anomaly_threshold
 
         if is_bad:
+            self._anomalies_found += 1
             log.warning(
                 f"ANOMALY DETECTED: {node_id[:16]}... "
                 f"(score={score:.4f}, threshold={self.anomaly_threshold})\n"
@@ -201,6 +203,10 @@ class VotingAnomalyDetector:
             ),
             "total_events_seen":    self._total_events,
             "model_trained":        self._model is not None,
+            "anomalies_detected":   self._anomalies_found,
+            "threshold":            self.anomaly_threshold,
+            "contamination":        self.contamination,
+            "min_samples_needed":   MIN_SAMPLES_TO_FIT,
         }
 
     # ── Internal helpers ───────────────────────────────────────────────────

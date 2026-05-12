@@ -18,23 +18,25 @@ async function renderWallet(state) {
   // Copy address button (main card)
   const copyBtn = document.getElementById('copy-address-btn');
   if (copyBtn) {
-    copyBtn.onclick = () => copyToClipboard(myAddr, copyBtn, '⎘ Copy Address');
+    copyBtn.onclick = () => copyToClipboard(myAddr, copyBtn, '<i data-lucide="copy"></i> Copy Address');
   }
 
   // Copy in receive panel
   const copyRecvBtn = document.getElementById('copy-receive-btn');
   if (copyRecvBtn) {
-    copyRecvBtn.onclick = () => copyToClipboard(myAddr, copyRecvBtn, '⎘ Copy');
+    copyRecvBtn.onclick = () => copyToClipboard(myAddr, copyRecvBtn, '<i data-lucide="copy"></i> Copy');
   }
 
   // Refresh TX history button
   const refreshTxBtn = document.getElementById('refresh-tx-btn');
   if (refreshTxBtn) {
     refreshTxBtn.onclick = async () => {
-      refreshTxBtn.textContent = '↺ Loading…';
+      refreshTxBtn.innerHTML = '<i data-lucide="loader-2" class="spin"></i> Loading…';
+      if (window.lucide) lucide.createIcons();
       await renderTxHistory();
       await refreshWalletBalance();
-      refreshTxBtn.textContent = '↺ Refresh';
+      refreshTxBtn.innerHTML = '<i data-lucide="rotate-cw"></i> Refresh';
+      if (window.lucide) lucide.createIcons();
     };
   }
 
@@ -137,7 +139,7 @@ async function renderTxHistory() {
     if (!txs.length) {
       listEl.innerHTML = `
         <div class="empty-state">
-          <div style="font-size:28px;margin-bottom:10px">📭</div>
+          <div style="font-size:28px;margin-bottom:10px"><i data-lucide="inbox"></i></div>
           No transactions yet.<br>
           <span style="font-size:11px;color:var(--text-3)">Start a second node and send POR tokens to see them here.</span>
         </div>`;
@@ -152,7 +154,7 @@ async function renderTxHistory() {
       let typeLabel = tx.type;
       if (isReceiver && tx.type === 'SEND') typeLabel = 'RECEIVE';
       
-      const dir = typeLabel === 'RECEIVE' ? '↓' : typeLabel === 'SEND' ? '↑' : '⇄';
+      const dir = typeLabel === 'RECEIVE' ? '<i data-lucide="arrow-down-left"></i>' : typeLabel === 'SEND' ? '<i data-lucide="arrow-up-right"></i>' : '<i data-lucide="repeat"></i>';
       const amtClass = typeLabel === 'RECEIVE' ? 'pos' : tx.type === 'SLASH' ? 'neg' : '';
       const isPending = tx.block_index === 'Pending';
 
@@ -175,6 +177,7 @@ async function renderTxHistory() {
           </div>
         </div>`;
     }).join('');
+    if (window.lucide) lucide.createIcons();
   } catch {
     listEl.innerHTML = '<div class="empty-state">Could not load history</div>';
   }
@@ -220,8 +223,9 @@ async function handleSend() {
   } catch {
     showSendMsg('error', '✗ Network error — is the node running?');
   } finally {
-    btn.textContent = '↑ Send POR';
+    btn.innerHTML = '<i data-lucide="arrow-up-right"></i> Send POR';
     btn.disabled    = false;
+    if (window.lucide) lucide.createIcons();
   }
 }
 
@@ -238,8 +242,9 @@ function shortId(id) {
 
 function copyToClipboard(text, btnEl, originalText) {
   navigator.clipboard.writeText(text).then(() => {
-    btnEl.textContent = '✓ Copied!';
+    btnEl.innerHTML = '<i data-lucide="check"></i> Copied!';
     btnEl.classList.add('copied');
+    if (window.lucide) lucide.createIcons();
     setTimeout(() => {
       btnEl.textContent = originalText;
       btnEl.classList.remove('copied');

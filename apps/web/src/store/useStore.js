@@ -13,7 +13,7 @@ const INITIAL_STATE = {
   walletBalance: 0,
   walletStaked:  0,
   tokens: [
-    { id: "por", symbol: "POR", name: "PoR Native", logo: "🛡️", amount: 0, balance: 0, price: 1.5, value: 0, change24h: +5.2 }
+    { id: "por", symbol: "POR", name: "PoR Native", logo: "Shield", amount: 0, balance: 0, price: 1.5, value: 0, change24h: +5.2 }
   ],
   chainHistory: [],  // on-chain transactions from backend
 
@@ -111,7 +111,7 @@ export const useStore = create((set) => ({
         ? [
             {
               id: Date.now(), type: "phase",
-              message: "🎓 Graduated — Full network participation unlocked!",
+              message: "Graduated — Full network participation unlocked!",
               time: "just now",
             },
             ...state.activities,
@@ -129,7 +129,7 @@ export const useStore = create((set) => ({
         walletBalance: normalized.walletBalance,
         walletStaked:  normalized.walletStaked,
         tokens: [{
-          id: "por", symbol: "POR", name: "PoR Native", logo: "🛡️",
+          id: "por", symbol: "POR", name: "PoR Native", logo: "Shield",
           amount:    normalized.walletBalance,
           balance:   normalized.walletBalance,
           price:     1.5,
@@ -267,7 +267,7 @@ export const useStore = create((set) => ({
         meritBoost: newBoost,
         activities: [
           { id: Date.now(), type: "phase",
-            message: "⚠️ Slashing event — misbehaviour detected. Reputation −40%",
+            message: "Slashing event — misbehaviour detected. Reputation −40%",
             time: "just now" },
           ...state.activities,
         ],

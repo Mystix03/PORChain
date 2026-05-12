@@ -136,4 +136,8 @@ const api = {
     const r = await fetch(`${BASE_URL}/config`);
     return r.json();
   },
+  async getSystemStatus() {
+    const r = await fetch(`${BASE_URL}/system/status`);
+    return r.json();
+  },
 };

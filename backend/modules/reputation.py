@@ -3,7 +3,7 @@ reputation.py — Proof-of-Reputation engine.
 Formula: R(t+1) = λ * R(t) + (1 - λ) * h(t)
 h(t) = 1.0 (honest) | 0.0 (malicious)
 
-Raw scores NEVER leave this node. Only eligibility booleans are exposed (ZKP-ready).
+Raw scores NEVER leave this node. Only eligibility booleans are exposed.
 """
 import config
 from modules import storage
@@ -66,7 +66,7 @@ async def get_all() -> dict:
     return await storage.read_or_default(_REP_FILE, {})
 
 
-# ── ZKP-ready eligibility checks (no raw score exposed) ──────────────────────
+# ── Eligibility checks (no raw score exposed) ──────────────────────────────
 
 async def is_eligible_to_vouch(node_id: str) -> bool:
     return await get_score(node_id) >= config.VOUCH_ELIGIBILITY_THRESHOLD
@@ -77,9 +77,7 @@ async def is_full_node_eligible(node_id: str) -> bool:
 
 
 async def eligibility_flags(node_id: str) -> dict:
-    """
-    ZKP-READY: returns only boolean flags — raw score never included.
-    Future: replace with ZKP proof.
+    Returns only boolean flags — raw score never included.
     """
     score = await get_score(node_id)
     return {

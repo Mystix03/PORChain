@@ -1,5 +1,6 @@
 "use client";
 import { useState, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { useStore } from "@/store/useStore";
 import { toast } from "sonner";
 import {
@@ -56,15 +57,17 @@ export default function Vouch() {
   if (!canVouch)
     return (
       <div style={{ padding: "20px 16px 0" }}>
-        <div
-          style={{
-            background: "white",
-            borderRadius: 24,
-            padding: "40px 24px",
-            textAlign: "center",
-            boxShadow: "0 2px 10px rgba(0,0,0,0.06)",
-          }}
-        >
+      <motion.div
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        style={{
+          background: "white",
+          borderRadius: 24,
+          padding: "40px 24px",
+          textAlign: "center",
+          boxShadow: "0 2px 10px rgba(0,0,0,0.06)",
+        }}
+      >
           <div
             style={{
               width: 72,
@@ -237,8 +240,12 @@ export default function Vouch() {
         {filtered.map((user) => {
           const done = vouched[user.wallet];
           return (
-            <div
+            <motion.div
+              layout
               key={user.wallet}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.05 }}
               style={{
                 background: "white",
                 borderRadius: 18,
@@ -382,7 +389,10 @@ export default function Vouch() {
       {/* Modal */}
       {modal && (
         <>
-          <div
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
             onClick={() => !vouching && setModal(null)}
             style={{
               position: "fixed",
@@ -392,7 +402,11 @@ export default function Vouch() {
               backdropFilter: "blur(4px)",
             }}
           />
-          <div
+          <motion.div
+            initial={{ y: "100%" }}
+            animate={{ y: 0 }}
+            exit={{ y: "100%" }}
+            transition={{ type: "spring", damping: 25, stiffness: 300 }}
             style={{
               position: "fixed",
               bottom: 0,

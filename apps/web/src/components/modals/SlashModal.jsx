@@ -19,7 +19,7 @@ export default function SlashModal({ onClose }) {
     await new Promise(r => setTimeout(r, 1800));
     execSlash();
     setStep("done");
-    toast.error("⚠️ Node slashed!", {
+    toast.error("Node slashed!", {
       description: `Reputation dropped from ${repPercent}% → ${newRepPercent}%`,
     });
     setBusy(false);

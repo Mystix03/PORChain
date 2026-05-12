@@ -1,5 +1,6 @@
 "use client";
 import { useState, useCallback, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import Splash from "@/components/splash";
 import { useStore } from "@/store/useStore";
 import { Toaster } from "sonner";
@@ -303,90 +304,104 @@ export default function App() {
           </div>
 
           {/* ── Notification Drawer ── */}
-          {showNotifications && (
-            <div
-              style={{
-                position: "absolute",
-                top: 120,
-                left: 12,
-                right: 12,
-                background: "white",
-                borderRadius: 20,
-                boxShadow: "0 12px 40px rgba(0,0,0,0.14)",
-                zIndex: 50,
-                overflow: "hidden",
-              }}
-            >
-              <div
+          <AnimatePresence>
+            {showNotifications && (
+              <motion.div
+                initial={{ opacity: 0, y: -20, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -20, scale: 0.95 }}
+                transition={{ type: "spring", damping: 25, stiffness: 300 }}
                 style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  padding: "14px 18px",
-                  borderBottom: "1px solid #F5F5F5",
+                  position: "absolute",
+                  top: 120,
+                  left: 12,
+                  right: 12,
+                  background: "white",
+                  borderRadius: 20,
+                  boxShadow: "0 12px 40px rgba(0,0,0,0.14)",
+                  zIndex: 50,
+                  overflow: "hidden",
                 }}
               >
-                <span
-                  style={{ fontSize: 15, fontWeight: 700, color: "#0D1421" }}
-                >
-                  Notifications
-                </span>
-                <button
-                  onClick={() => setShowNotifications(false)}
-                  style={{
-                    background: "none",
-                    border: "none",
-                    cursor: "pointer",
-                    padding: 4,
-                  }}
-                >
-                  <X size={18} color="#9CA3AF" />
-                </button>
-              </div>
-              {notifications.map((n, i) => (
                 <div
-                  key={n.id}
                   style={{
-                    padding: "13px 18px",
-                    borderBottom:
-                      i < notifications.length - 1
-                        ? "1px solid #F9F9F9"
-                        : "none",
                     display: "flex",
-                    alignItems: "flex-start",
-                    gap: 10,
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    padding: "14px 18px",
+                    borderBottom: "1px solid #F5F5F5",
                   }}
                 >
-                  <div
+                  <span
+                    style={{ fontSize: 15, fontWeight: 700, color: "#0D1421" }}
+                  >
+                    Notifications
+                  </span>
+                  <button
+                    onClick={() => setShowNotifications(false)}
                     style={{
-                      width: 8,
-                      height: 8,
-                      borderRadius: "50%",
-                      background: n.read ? "#E5E7EB" : "#0052FF",
-                      marginTop: 4,
-                      flexShrink: 0,
+                      background: "none",
+                      border: "none",
+                      cursor: "pointer",
+                      padding: 4,
                     }}
-                  />
-                  <div>
-                    <div
-                      style={{
-                        fontSize: 13,
-                        fontWeight: n.read ? 400 : 600,
-                        color: "#0D1421",
-                      }}
-                    >
-                      {n.message}
-                    </div>
-                    <div
-                      style={{ fontSize: 11, color: "#9CA3AF", marginTop: 2 }}
-                    >
-                      {n.time}
-                    </div>
-                  </div>
+                  >
+                    <X size={18} color="#9CA3AF" />
+                  </button>
                 </div>
-              ))}
-            </div>
-          )}
+                <div style={{ maxHeight: 300, overflowY: "auto" }}>
+                  {notifications.length === 0 ? (
+                    <div style={{ padding: 20, textAlign: "center", color: "#9CA3AF", fontSize: 13 }}>
+                      No new notifications
+                    </div>
+                  ) : (
+                    notifications.map((n, i) => (
+                      <div
+                        key={n.id}
+                        style={{
+                          padding: "13px 18px",
+                          borderBottom:
+                            i < notifications.length - 1
+                              ? "1px solid #F9F9F9"
+                              : "none",
+                          display: "flex",
+                          alignItems: "flex-start",
+                          gap: 10,
+                        }}
+                      >
+                        <div
+                          style={{
+                            width: 8,
+                            height: 8,
+                            borderRadius: "50%",
+                            background: n.read ? "#E5E7EB" : "#0052FF",
+                            marginTop: 4,
+                            flexShrink: 0,
+                          }}
+                        />
+                        <div>
+                          <div
+                            style={{
+                              fontSize: 13,
+                              fontWeight: n.read ? 400 : 600,
+                              color: "#0D1421",
+                            }}
+                          >
+                            {n.message}
+                          </div>
+                          <div
+                            style={{ fontSize: 11, color: "#9CA3AF", marginTop: 2 }}
+                          >
+                            {n.time}
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {/* ── Content ── */}
           <div
@@ -397,7 +412,17 @@ export default function App() {
               WebkitOverflowScrolling: "touch",
             }}
           >
-            {renderContent()}
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={activeTab}
+                initial={{ opacity: 0, x: 10 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -10 }}
+                transition={{ duration: 0.2, ease: "easeOut" }}
+              >
+                {renderContent()}
+              </motion.div>
+            </AnimatePresence>
             <div style={{ height: 24 }} />
           </div>
 
@@ -434,7 +459,8 @@ export default function App() {
                     padding: "4px 0",
                   }}
                 >
-                  <div
+                  <motion.div
+                    whileTap={{ scale: 0.9 }}
                     style={{
                       width: 32,
                       height: 32,
@@ -450,8 +476,9 @@ export default function App() {
                       color={active ? "#0052FF" : "#9CA3AF"}
                       strokeWidth={active ? 2.5 : 1.8}
                     />
-                  </div>
-                  <span
+                  </motion.div>
+                  <motion.span
+                    animate={{ scale: active ? 1.05 : 1 }}
                     style={{
                       fontSize: 10,
                       color: active ? "#0052FF" : "#9CA3AF",
@@ -459,7 +486,7 @@ export default function App() {
                     }}
                   >
                     {label}
-                  </span>
+                  </motion.span>
                 </button>
               );
             })}

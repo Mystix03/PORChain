@@ -1,5 +1,6 @@
 "use client";
 import { useStore } from "@/store/useStore";
+import { motion } from "framer-motion";
 import {
   TrendingUp,
   ArrowUpRight,
@@ -17,6 +18,8 @@ import {
   EyeOff,
   Lock,
   Gift,
+  Globe,
+  Box,
 } from "lucide-react";
 import { useState, useRef } from "react";
 
@@ -67,7 +70,9 @@ export default function Home() {
   return (
     <div style={{ padding: "20px 16px 0" }}>
       {/* Portfolio Balance */}
-      <div
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
         style={{
           background: "white",
           borderRadius: 24,
@@ -204,39 +209,48 @@ export default function Home() {
       </div>
 
       {/* ── Network Status Strip ─────────────────────────────────────────────── */}
-      <div style={{
-        display: "grid", gridTemplateColumns: "1fr 1fr 1fr",
-        gap: 10, marginBottom: 20,
-      }}>
+      <motion.div 
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.1, staggerChildren: 0.05 }}
+        style={{
+          display: "grid", gridTemplateColumns: "1fr 1fr 1fr",
+          gap: 10, marginBottom: 20,
+        }}
+      >
         {[
           {
             label: "Peers",
             value: peersCount,
-            icon: "🌐",
+            icon: <Globe size={22} color="#05C48F" />,
             color: peersCount > 0 ? "#05C48F" : "#9CA3AF",
             bg: peersCount > 0 ? "#ECFDF5" : "#F9FAFB",
           },
           {
             label: "Block Height",
             value: `#${chainHeight}`,
-            icon: "📦",
+            icon: <Box size={22} color="#0052FF" />,
             color: "#0052FF",
             bg: "#EEF3FF",
           },
           {
             label: "Staked",
             value: `${walletStaked.toFixed(2)} POR`,
-            icon: "🔒",
+            icon: <Lock size={22} color="#F59E0B" />,
             color: walletStaked > 0 ? "#F59E0B" : "#9CA3AF",
             bg: walletStaked > 0 ? "#FFFBEB" : "#F9FAFB",
           },
         ].map(({ label, value, icon, color, bg }) => (
-          <div key={label} style={{
-            background: bg,
-            borderRadius: 16, padding: "12px 10px",
-            textAlign: "center",
-          }}>
-            <div style={{ fontSize: 18, marginBottom: 4 }}>{icon}</div>
+          <motion.div 
+            key={label}
+            whileHover={{ y: -2 }}
+            style={{
+              background: bg,
+              borderRadius: 16, padding: "12px 10px",
+              textAlign: "center",
+            }}
+          >
+            <div style={{ display: "flex", justifyContent: "center", marginBottom: 4 }}>{icon}</div>
             <div style={{ fontSize: 14, fontWeight: 800, color, letterSpacing: -0.5 }}>
               {value}
             </div>
@@ -247,13 +261,16 @@ export default function Home() {
         ))}
       </div>
 
-      {/* Large Reputation Orb Card — long-press to open Slash Simulator */}
-      <div
+      <motion.div
         onMouseDown={startLongPress}
         onMouseUp={cancelLongPress}
         onMouseLeave={cancelLongPress}
         onTouchStart={startLongPress}
         onTouchEnd={cancelLongPress}
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ delay: 0.2 }}
+        whileTap={{ scale: 0.98 }}
         style={{
           background:
             "linear-gradient(140deg, #0038E8 0%, #0052FF 55%, #2271FF 100%)",
@@ -577,7 +594,10 @@ export default function Home() {
       )}
 
       {/* Token List */}
-      <div
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.3 }}
         style={{
           background: "white",
           borderRadius: 20,
@@ -603,8 +623,9 @@ export default function Home() {
           </span>
         </div>
         {tokens.map((token, i) => (
-          <div
+          <motion.div
             key={token.symbol}
+            whileHover={{ background: "#F9FAFB" }}
             style={{
               padding: "14px 16px",
               borderBottom:
@@ -628,7 +649,7 @@ export default function Home() {
                 flexShrink: 0,
               }}
             >
-              {token.logo}
+              {token.logo === "Shield" ? <Shield size={22} color="#0052FF" /> : token.logo}
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div

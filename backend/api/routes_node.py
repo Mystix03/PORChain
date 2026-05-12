@@ -1,6 +1,9 @@
 """routes_node.py — /node_state and /peers endpoints."""
 from fastapi import APIRouter
-from modules import identity, registry, reputation, blockchain, networking, wallet
+from modules import identity, registry, reputation, blockchain, networking, wallet, storage
+import os
+import json
+import config
 
 router = APIRouter()
 
@@ -66,10 +69,33 @@ async def get_registry():
 @router.get("/config")
 async def get_config():
     """Return public protocol parameters for the frontend."""
-    import config
     return {
         "VOUCHES_REQUIRED": config.VOUCHES_REQUIRED,
         "PHASE1_PASS_THRESHOLD": config.PHASE1_PASS_THRESHOLD,
         "PHASE3_ROUNDS": config.PHASE3_ROUNDS,
         "PHASE3_HONEST_ROUNDS": config.PHASE3_HONEST_ROUNDS,
+    }
+
+
+@router.get("/system/status")
+async def system_status():
+    """Return the status of the ML Oracle and other sidecars."""
+    ml_status_path = os.path.join(config.DATA_DIR, "ml_status.json")
+    ml_status = {"status": "offline", "trained": False, "nodes_tracked": 0}
+    
+    if os.path.exists(ml_status_path):
+        try:
+            with open(ml_status_path, "r") as f:
+                data = json.load(f)
+                # If the status is older than 60 seconds, consider it offline
+                import time
+                if time.time() - data.get("timestamp", 0) < 60:
+                    ml_status = data
+                else:
+                    ml_status["status"] = "offline (stale)"
+        except Exception:
+            pass
+            
+    return {
+        "ml_oracle": ml_status
     }

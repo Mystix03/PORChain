@@ -19,6 +19,8 @@ import logging
 import sys
 import time
 import requests
+import json
+import os
 from typing import Optional
 
 from chain_listener import listen_to_node_state
@@ -63,6 +65,7 @@ class MisbehaviorOracle:
 
         # Tracks when we last penalized each node (anti-spam)
         self._last_slash_proposed: dict[str, float] = {}
+        self.data_dir: Optional[str] = None
 
     # ── Event handler ──────────────────────────────────────────────────────
 
@@ -152,6 +155,34 @@ class MisbehaviorOracle:
             # Scan all nodes with enough history
             for node in list(self.detector._histories.keys()):
                 await self._check_node(node)
+            
+            self._write_status(summary)
+
+    def _write_status(self, summary: dict):
+        """Write current oracle status to a JSON file for the backend to read."""
+        if not self.data_dir:
+            return
+            
+        status = {
+            "status": "online",
+            "trained": summary["model_trained"],
+            "nodes_tracked": summary["total_nodes_tracked"],
+            "nodes_with_history": summary["nodes_with_history"],
+            "anomalies_detected": summary["anomalies_detected"],
+            "threshold": summary["threshold"],
+            "contamination": summary["contamination"],
+            "min_samples_needed": summary["min_samples_needed"],
+            "total_events": summary["total_events_seen"],
+            "timestamp": time.time()
+        }
+        
+        try:
+            os.makedirs(self.data_dir, exist_ok=True)
+            path = os.path.join(self.data_dir, "ml_status.json")
+            with open(path, "w") as f:
+                json.dump(status, f)
+        except Exception as e:
+            log.error(f"Failed to write status file: {e}")
 
     # ── Main run loop ──────────────────────────────────────────────────────
 
@@ -186,9 +217,27 @@ def main():
         action="store_true",
         help="Run anomaly detection only — do not trigger any penalties",
     )
+    parser.add_argument(
+        "--data-dir",
+        type=str,
+        help="Directory to write ml_status.json for the backend to read",
+    )
     args = parser.parse_args()
 
     oracle = MisbehaviorOracle(node_url=args.node, dry_run=args.dry_run)
+    
+    # Try to find data_dir
+    if args.data_dir:
+        oracle.data_dir = args.data_dir
+    else:
+        # Default fallback: check if we can find backend/data_5000
+        # This script usually runs from scripts/ml-oracle/
+        potential = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../backend/data_5000"))
+        if os.path.exists(potential):
+            oracle.data_dir = potential
+        else:
+            potential = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../backend/data"))
+            oracle.data_dir = potential
 
     try:
         asyncio.run(oracle.run())
