@@ -5,6 +5,9 @@ Override any value with an environment variable.
 """
 import os
 import pathlib
+import time
+
+START_TIME = time.time()
 
 # ── Network ────────────────────────────────────────────────────────────────────
 NODE_PORT: int = int(os.getenv("NODE_PORT", 5000))

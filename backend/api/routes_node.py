@@ -32,6 +32,7 @@ async def node_state():
         "peers_count": len(peers),
         "chain_height": len(chain),
         "wallet": bal,
+        "start_time": config.START_TIME,
     }
 
 

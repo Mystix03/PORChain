@@ -101,7 +101,9 @@ async function updateDashboard(state) {
   // Stats
   setVal('stat-phase-val',   phaseLabel(state.phase));
   
-  const uptimeMs = Date.now() - window._uptimeStart;
+  // Uptime (authoritative from node backend)
+  const nodeStart = state.start_time ? (state.start_time * 1000) : window._uptimeStart;
+  const uptimeMs  = Date.now() - nodeStart;
   const d = Math.floor(uptimeMs / 86400000);
   const h = Math.floor((uptimeMs % 86400000) / 3600000);
   const m = Math.floor((uptimeMs % 3600000) / 60000);
