@@ -19,8 +19,8 @@ export function normalizeNodeState(raw) {
     PHASE_1:           1,
     PHASE_2:           2,
     PHASE_3:           3,
-    UNDER_OBSERVATION: 3,   // treated as Phase 3 in UI
-    FULL_NODE:         4,
+    UNDER_OBSERVATION: 4,
+    FULL_NODE:         5,
     BANNED:            0,
   };
 

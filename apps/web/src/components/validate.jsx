@@ -116,7 +116,7 @@ export default function Validate() {
               Full Validator
             </div>
             <div style={{ fontSize: 12, color: "rgba(255,255,255,0.65)", marginTop: 2 }}>
-              Onboarding complete · All 3 phases passed
+              Onboarding complete · All 5 phases passed
             </div>
           </div>
         </div>

@@ -50,9 +50,12 @@ else {
 }
 
 # 2. Setup Data Directory
-if (!(Test-Path $DataDir)) {
-    New-Item -ItemType Directory -Path $DataDir -Force | Out-Null
+if (Test-Path $DataDir) {
+    Write-Host "Deleting old data directory: $DataDir" -ForegroundColor Yellow
+    Remove-Item -Recurse -Force $DataDir
 }
+
+New-Item -ItemType Directory -Path $DataDir -Force | Out-Null
 
 Write-Host "Data dir : $DataDir" -ForegroundColor Gray
 

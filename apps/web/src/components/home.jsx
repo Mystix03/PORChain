@@ -358,7 +358,7 @@ export default function Home() {
             }}
           >
             <span style={{ color: "white", fontSize: 13, fontWeight: 700 }}>
-              Phase {phase}
+              {phase === 5 ? "Full Node" : phase === 4 ? "Observation" : `Phase ${phase}`}
             </span>
           </div>
         </div>
@@ -458,18 +458,11 @@ export default function Home() {
                 <CheckCircle size={14} color="#05C48F" />
               </div>
             </div>
-            <div
-              style={{
-                fontSize: 20,
-                fontWeight: 800,
-                color: "#0D1421",
-                marginBottom: 3,
-              }}
-            >
-              {tasksCompleted}/5
+            <div style={{ fontSize: 20, fontWeight: 800, color: "#0D1421", marginBottom: 3 }}>
+              {tasksCompleted} Verified
             </div>
             <div style={{ fontSize: 11, color: "#9CA3AF" }}>
-              Phase {phase === 1 ? "1" : "Complete"}
+              {phase === 1 ? "Proof of Honesty" : "Phase 1 Complete"}
             </div>
           </div>
 
@@ -560,7 +553,7 @@ export default function Home() {
               Full Validator
             </div>
             <div style={{ fontSize: 12, color: "rgba(255,255,255,0.75)" }}>
-              All 3 phases complete · Network access unlocked
+              All 5 phases complete · Network access unlocked
             </div>
           </div>
           <button

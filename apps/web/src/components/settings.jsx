@@ -19,7 +19,7 @@ const PRIVATE_KEY_MOCK =
 const PUBLIC_KEY_MOCK =
   "7xKq9Ab3mNpQrStUvWxYzBcDeFgHiJkLmNoPqRsTuVwXyZ12345678901234567890";
 
-export default function Settings({ onClose }) {
+export default function Settings({ onClose, nodeId }) {
   const isDarkMode = false; // Hardcoded to match web app's current theme
 
   // Theme colors
@@ -36,10 +36,10 @@ export default function Settings({ onClose }) {
   const [keyRevealed, setKeyRevealed] = useState(false);
 
   const handleCopyNodeId = () => {
-    navigator.clipboard.writeText(PUBLIC_KEY_MOCK);
+    navigator.clipboard.writeText(nodeId);
     setNodeIdCopied(true);
     setTimeout(() => setNodeIdCopied(false), 2000);
-    toast.success("Node ID copied to clipboard");
+    toast.success("Node Address copied to clipboard");
   };
 
   const handleCopyKey = () => {
@@ -232,13 +232,13 @@ export default function Settings({ onClose }) {
             </div>
           </div>
 
-          {/* Node Identifier */}
+          {/* Node Address */}
           <div style={{ fontSize: 11, fontWeight: "700", color: "#60A5FA", letterSpacing: 1, marginBottom: 8, textTransform: "uppercase" }}>
-            Node Identifier
+            Node Address
           </div>
           <div style={{ backgroundColor: "#111827", borderRadius: 14, padding: 14, marginBottom: 16, border: "1px solid #1E3A5F" }}>
             <div style={{ fontSize: 13, color: "#CBD5E1", fontFamily: "monospace", marginBottom: 12, lineHeight: 1.5, wordBreak: "break-all" }}>
-              {PUBLIC_KEY_MOCK}
+              {nodeId}
             </div>
             <button
               onClick={handleCopyNodeId}

@@ -267,7 +267,9 @@ async def vouch(voucher_id: str, target_id: str) -> dict:
 
     # Stake from voucher's wallet
     try:
-        stake_tx = await wallet.stake(stake_amount, reason=f"VOUCH:{target_id}")
+        # Include Work Leverage in the reason so it shows up in activity feeds
+        reason = f"Vouch for {target_id[:8]}... (Work Leverage: {work_discount:.1%})"
+        stake_tx = await wallet.stake(stake_amount, reason=reason)
     except ValueError as e:
         return {"error": str(e)}
 

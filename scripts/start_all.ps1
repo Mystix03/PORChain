@@ -64,6 +64,6 @@ Start-Process powershell `
     -ArgumentList "-NoExit", "-Command", "$CmdLine"
 
 Write-Host "`n✅ ALL SYSTEMS GO!" -ForegroundColor Green
-Write-Host "Laptop (Static): http://$($IP):5000" -ForegroundColor Cyan
-Write-Host "Phone (React):   http://$($IP):5000" -ForegroundColor Cyan
+Write-Host "Laptop (Static): http://$($IP):4000" -ForegroundColor Cyan
+Write-Host "Phone (React):   http://$($IP):4000" -ForegroundColor Cyan
 Write-Host "------------------------------------------------" -ForegroundColor Cyan

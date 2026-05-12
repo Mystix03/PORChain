@@ -1,4 +1,5 @@
 "use client";
+import { useState } from "react";
 import { useStore } from "@/store/useStore";
 import {
   CheckCircle, Shield, TrendingUp, Award,
@@ -45,7 +46,10 @@ function chainTxToActivity(tx) {
   let message = "";
   if (type === "SEND")    message = `Sent ${tx.amount?.toFixed(4)} POR to ${shortTo}`;
   else if (type === "RECEIVE") message = `Received ${tx.amount?.toFixed(4)} POR from ${shortFrom}`;
-  else if (type === "STAKE")   message = `Staked ${tx.amount?.toFixed(4)} POR (${tx.note || "vouch"})`;
+  else if (type === "STAKE") {
+    const isVouch = tx.note?.includes("Vouch");
+    message = isVouch ? tx.note : `Staked ${tx.amount?.toFixed(4)} POR (${tx.note || "vouch"})`;
+  }
   else if (type === "UNSTAKE") message = `Unstaked ${tx.amount?.toFixed(4)} POR (${tx.note || "released"})`;
   else if (type === "SLASH")   message = `Slashed ${tx.amount?.toFixed(4)} POR — ${tx.note || "penalty"}`;
   else message = `${type} · ${tx.amount?.toFixed(4)} POR`;
@@ -67,15 +71,14 @@ function chainTxToActivity(tx) {
 }
 
 const FILTERS = ["All", "Transactions", "Staking", "PoR Events"];
-
 export default function Activity() {
   const { activities, chainHistory } = useStore();
+  const [activeFilter, setActiveFilter] = useState("All");
 
   // Convert on-chain TXs to the same shape as local activities
   const chainActivities = (chainHistory ?? []).map(chainTxToActivity);
 
   // Merge: chainActivities first (they have real timestamps), then local PoR events
-  // De-duplicate by id — local activities from execSend are overridden by chain version
   const chainIds = new Set(chainActivities.map(a => a.id));
   const localOnly = activities.filter(a => !chainIds.has(a.id));
 
@@ -88,6 +91,15 @@ export default function Activity() {
 
   const txTypes   = new Set(["SEND", "RECEIVE", "send", "receive", "swap"]);
   const stakeTypes= new Set(["STAKE", "UNSTAKE", "SLASH"]);
+
+  // Apply filtering
+  const filtered = merged.filter(a => {
+    if (activeFilter === "All") return true;
+    if (activeFilter === "Transactions") return txTypes.has(a.type);
+    if (activeFilter === "Staking") return stakeTypes.has(a.type);
+    if (activeFilter === "PoR Events") return !txTypes.has(a.type) && !stakeTypes.has(a.type);
+    return true;
+  });
 
   return (
     <div style={{ padding: "20px 16px 0" }}>
@@ -106,15 +118,16 @@ export default function Activity() {
         display: "flex", gap: 8, marginBottom: 20,
         overflowX: "auto", WebkitOverflowScrolling: "touch", paddingBottom: 4,
       }}>
-        {FILTERS.map((filter, i) => (
+        {FILTERS.map((filter) => (
           <div
             key={filter}
+            onClick={() => setActiveFilter(filter)}
             style={{
-              background: i === 0 ? "#0052FF" : "white",
-              color:      i === 0 ? "white"   : "#6B7280",
+              background: activeFilter === filter ? "#0052FF" : "white",
+              color:      activeFilter === filter ? "white"   : "#6B7280",
               borderRadius: 12, padding: "8px 16px",
               fontSize: 13, fontWeight: 700,
-              border: i === 0 ? "none" : "1px solid #E5E7EB",
+              border: activeFilter === filter ? "none" : "1px solid #E5E7EB",
               cursor: "pointer", whiteSpace: "nowrap", flexShrink: 0,
             }}
           >
@@ -140,7 +153,7 @@ export default function Activity() {
       )}
 
       {/* Activity list */}
-      {merged.length === 0 ? (
+      {filtered.length === 0 ? (
         <div style={{
           background: "white", borderRadius: 20, padding: "48px 20px",
           textAlign: "center", boxShadow: "0 1px 6px rgba(0,0,0,0.06)",
@@ -155,7 +168,7 @@ export default function Activity() {
         </div>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-          {merged.map((activity, i) => {
+          {filtered.map((activity, i) => {
             const meta = ACTIVITY_META[activity.type] || ACTIVITY_META.default;
             const { Icon, color, bg, label } = meta;
             const isTx = txTypes.has(activity.type);
