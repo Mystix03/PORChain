@@ -389,6 +389,7 @@ input {
   left: 0;
   padding: 20px 12px;
   z-index: 50;
+  transition: all 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 .sidenav {
@@ -446,6 +447,37 @@ input {
   font-size: 14px;
   font-weight: 700;
   font-family: 'JetBrains Mono', monospace;
+}
+
+/* ── Sidebar Collapse State ───────────────────────────────────────────── */
+body.sidebar-collapsed {
+  --sidebar-w: 68px;
+}
+
+.sidebar-collapsed .sidebar {
+  padding: 20px 8px;
+}
+
+.sidebar-collapsed .sidebar-footer {
+  display: none !important;
+}
+
+.sidebar-collapsed .nav-item {
+  font-size: 0 !important; /* Intelligently hide bare text nodes without stripping display structure */
+  gap: 0 !important;
+  justify-content: center;
+  padding: 12px 0;
+  border-radius: 8px;
+}
+
+.sidebar-collapsed .nav-icon {
+  width: auto;
+  font-size: 18px;
+}
+
+.sidebar-collapsed .nav-item.active {
+  border-left-width: 3px;
+  background: rgba(212, 248, 50, 0.1);
 }
 
 /* ── Content ─────────────────────────────────────────────────────────────── */

@@ -19,6 +19,9 @@
   <!-- ── Header ────────────────────────────────────────────────── -->
   <header class="topbar" id="topbar">
     <div class="topbar-left">
+      <button id="sidebar-toggle-btn" title="Toggle Menu" style="background:none; border:none; color:var(--text-1); cursor:pointer; margin-right:12px; display:flex; align-items:center; justify-content:center; padding:6px; border-radius:6px; transition:all 0.2s; outline:none;">
+        <i data-lucide="menu" style="width:18px; height:18px;"></i>
+      </button>
       <div class="logo">
         <span class="logo-icon"><i data-lucide="hexagon"></i></span>
         <span class="logo-text">POR<span class="logo-accent">Chain</span></span>
@@ -28,6 +31,9 @@
         <span id="node-id-short">Loading...</span>
       </div>
     </div>
+    <style>
+      #sidebar-toggle-btn:hover { background: rgba(255,255,255,0.08); color: var(--accent-v) !important; }
+    </style>
     <div class="topbar-right">
       <div class="phase-badge" id="phase-badge">—</div>
       <div class="wallet-badge" id="wallet-badge">
@@ -69,22 +75,22 @@
     <!-- ── Sidebar ─────────────────────────────────────────────── -->
     <aside class="sidebar" id="sidebar">
       <nav class="sidenav">
-        <a href="#" class="nav-item active" data-view="dashboard" id="nav-dashboard">
+        <a href="#" class="nav-item active" data-view="dashboard" id="nav-dashboard" title="Dashboard Overview">
           <span class="nav-icon"><i data-lucide="layout-dashboard"></i></span> Dashboard
         </a>
-        <a href="#" class="nav-item" data-view="chain" id="nav-chain">
+        <a href="#" class="nav-item" data-view="chain" id="nav-chain" title="Blockchain Explorer">
           <span class="nav-icon"><i data-lucide="blocks"></i></span> Chain
         </a>
-        <a href="#" class="nav-item" data-view="wallet" id="nav-wallet">
+        <a href="#" class="nav-item" data-view="wallet" id="nav-wallet" title="My Wallet & Balance">
           <span class="nav-icon"><i data-lucide="wallet"></i></span> Wallet
         </a>
-        <a href="#" class="nav-item" data-view="peers" id="nav-peers">
+        <a href="#" class="nav-item" data-view="peers" id="nav-peers" title="Connected Network Peers">
           <span class="nav-icon"><i data-lucide="users"></i></span> Peers
         </a>
-        <a href="#" class="nav-item" data-view="coldstart" id="nav-coldstart">
+        <a href="#" class="nav-item" data-view="coldstart" id="nav-coldstart" title="ColdStart Onboarding Engine">
           <span class="nav-icon"><i data-lucide="zap"></i></span> ColdStart
         </a>
-        <a href="#" class="nav-item" data-view="ml" id="nav-ml">
+        <a href="#" class="nav-item" data-view="ml" id="nav-ml" title="ML Anomaly Diagnosis">
           <span class="nav-icon"><i data-lucide="brain"></i></span> ML Oracle
         </a>
       </nav>

@@ -7,6 +7,11 @@ let _state = null;
 
 // ── Bootstrap ─────────────────────────────────────────────────────────────────
 async function init() {
+  // Retrieve and apply collapsed sidebar state instantly on boot
+  if (localStorage.getItem('sidebarCollapsed') === 'true') {
+    document.body.classList.add('sidebar-collapsed');
+  }
+  
   try {
     // 1. Initialize Browser Wallet (Multi-User mode)
     await WalletManager.init();
@@ -175,6 +180,15 @@ async function updateSidebarHeight() {
 
 // ── Nav ───────────────────────────────────────────────────────────────────────
 function setupNav() {
+  // Bind Sidebar Collapse Engine
+  const toggleBtn = document.getElementById('sidebar-toggle-btn');
+  if (toggleBtn) {
+    toggleBtn.addEventListener('click', () => {
+      const isCollapsed = document.body.classList.toggle('sidebar-collapsed');
+      localStorage.setItem('sidebarCollapsed', isCollapsed ? 'true' : 'false');
+    });
+  }
+
   document.querySelectorAll('.nav-item').forEach(item => {
     item.addEventListener('click', async e => {
       e.preventDefault();
