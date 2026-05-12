@@ -90,7 +90,7 @@ export default function Vouch() {
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           style={{
-            background: "white",
+            background: "var(--bg-card)",
             borderRadius: 24,
             padding: "40px 24px",
             textAlign: "center",
@@ -102,7 +102,7 @@ export default function Vouch() {
               width: 72,
               height: 72,
               borderRadius: "50%",
-              background: "#F3F4F6",
+              background: "var(--bg-input)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -115,7 +115,7 @@ export default function Vouch() {
             style={{
               fontSize: 20,
               fontWeight: 800,
-              color: "#0D1421",
+              color: "var(--text-primary)",
               marginBottom: 8,
             }}
           >
@@ -124,18 +124,18 @@ export default function Vouch() {
           <div
             style={{
               fontSize: 14,
-              color: "#6B7280",
+              color: "var(--text-secondary)",
               marginBottom: 24,
               lineHeight: 1.6,
             }}
           >
             You need a reputation score of{" "}
-            <strong style={{ color: "#0D1421" }}>70% or higher</strong> to vouch
+            <strong style={{ color: "var(--text-primary)" }}>70% or higher</strong> to vouch
             for other users.
           </div>
           <div
             style={{
-              background: "#F5F7FA",
+              background: "var(--bg-input)",
               borderRadius: 16,
               padding: "16px 20px",
             }}
@@ -147,7 +147,7 @@ export default function Vouch() {
                 marginBottom: 8,
               }}
             >
-              <span style={{ fontSize: 13, color: "#6B7280" }}>
+              <span style={{ fontSize: 13, color: "var(--text-secondary)" }}>
                 Your current score
               </span>
               <span style={{ fontSize: 13, fontWeight: 700, color: "#EF4444" }}>
@@ -171,7 +171,7 @@ export default function Vouch() {
                 }}
               />
             </div>
-            <div style={{ fontSize: 11, color: "#9CA3AF", marginTop: 6 }}>
+            <div style={{ fontSize: 11, color: "var(--text-secondary)", marginTop: 6 }}>
               Need {Math.round((0.7 - reputation) * 100)}% more · Complete tasks
               and get vouched
             </div>
@@ -192,7 +192,7 @@ export default function Vouch() {
 
       <div style={{ marginBottom: 16 }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <div style={{ fontSize: 20, fontWeight: 800, color: "#0D1421" }}>Vouch for Others</div>
+          <div style={{ fontSize: 20, fontWeight: 800, color: "var(--text-primary)" }}>Vouch for Others</div>
           <div style={{ display: "flex", alignItems: "center", gap: 6, background: "#ECFDF5", borderRadius: 20, padding: "4px 10px" }}>
             <div className="online-dot" style={{ width: 7, height: 7, borderRadius: "50%", background: "#05C48F" }} />
             <span style={{ fontSize: 11, fontWeight: 700, color: "#05C48F" }}>
@@ -200,15 +200,15 @@ export default function Vouch() {
             </span>
           </div>
         </div>
-        <div style={{ fontSize: 13, color: "#9CA3AF", marginTop: 4 }}>
+        <div style={{ fontSize: 13, color: "var(--text-secondary)", marginTop: 4 }}>
           Stake POR to help new members join the network
         </div>
       </div>
 
       <div
         style={{
-          background: "linear-gradient(135deg,#EEF3FF,#F5F8FF)",
-          border: "1px solid #DBEAFE",
+          background: "rgba(0, 82, 255, 0.08)",
+          border: "1px solid rgba(0, 82, 255, 0.15)",
           borderRadius: 16,
           padding: "14px 16px",
           marginBottom: 18,
@@ -223,10 +223,10 @@ export default function Vouch() {
           style={{ flexShrink: 0, marginTop: 1 }}
         />
         <div>
-          <div style={{ fontSize: 13, fontWeight: 700, color: "#0D1421" }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text-primary)" }}>
             Work-Weighted Collateral
           </div>
-          <div style={{ fontSize: 12, color: "#6B7280", marginTop: 3 }}>
+          <div style={{ fontSize: 12, color: "var(--text-secondary)", marginTop: 3 }}>
             The required stake is discounted based on the candidate's mining effort (Nonce). More work means less collateral for you.
           </div>
         </div>
@@ -253,9 +253,9 @@ export default function Vouch() {
             padding: "12px 14px 12px 40px",
             borderRadius: 14,
             border: "1.5px solid #E5E7EB",
-            background: "white",
+            background: "var(--bg-card)",
             fontSize: 14,
-            color: "#0D1421",
+            color: "var(--text-primary)",
             outline: "none",
             boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
           }}
@@ -266,13 +266,13 @@ export default function Vouch() {
       {loading ? (
         <div style={{ textAlign: "center", padding: "40px" }}>
           <Loader size={24} className="animate-spin" color="#0052FF" />
-          <div style={{ marginTop: 8, fontSize: 13, color: "#9CA3AF" }}>Loading candidates...</div>
+          <div style={{ marginTop: 8, fontSize: 13, color: "var(--text-secondary)" }}>Loading candidates...</div>
         </div>
       ) : filtered.length === 0 ? (
-        <div style={{ textAlign: "center", padding: "40px", background: "white", borderRadius: 20 }}>
+        <div style={{ textAlign: "center", padding: "40px", background: "var(--bg-card)", borderRadius: 20 }}>
           <div style={{ fontSize: 40, marginBottom: 12 }}>🧘</div>
-          <div style={{ fontSize: 15, fontWeight: 700, color: "#0D1421" }}>No Candidates Found</div>
-          <div style={{ fontSize: 13, color: "#9CA3AF", marginTop: 4 }}>Everyone is currently vouched or offline.</div>
+          <div style={{ fontSize: 15, fontWeight: 700, color: "var(--text-primary)" }}>No Candidates Found</div>
+          <div style={{ fontSize: 13, color: "var(--text-secondary)", marginTop: 4 }}>Everyone is currently vouched or offline.</div>
         </div>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
@@ -282,7 +282,7 @@ export default function Vouch() {
               <div
                 key={user.node_id}
                 style={{
-                  background: "white",
+                  background: "var(--bg-card)",
                   borderRadius: 18,
                   padding: "14px 16px",
                   boxShadow: "0 1px 6px rgba(0,0,0,0.06)",
@@ -310,16 +310,16 @@ export default function Vouch() {
                 </div>
 
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: "#0D1421" }}>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text-primary)" }}>
                     {user.node_id.slice(0, 16)}...
                   </div>
-                  <div style={{ fontSize: 11, color: "#9CA3AF", marginTop: 1 }}>
+                  <div style={{ fontSize: 11, color: "var(--text-secondary)", marginTop: 1 }}>
                     {user.honest_rounds || 0} rounds · Rep {Math.round((user.reputation || 0) * 100)}%
                   </div>
                   <div
                     style={{
                       height: 3,
-                      background: "#F3F4F6",
+                      background: "var(--bg-input)",
                       borderRadius: 2,
                       marginTop: 6,
                       overflow: "hidden",
@@ -396,7 +396,7 @@ export default function Vouch() {
               transform: "translateX(-50%)",
               width: "100%",
               maxWidth: 430,
-              background: "white",
+              background: "var(--bg-card)",
               borderRadius: "24px 24px 0 0",
               padding: "24px 20px 36px",
               zIndex: 101,
@@ -405,24 +405,24 @@ export default function Vouch() {
           >
             <div style={{ width: 40, height: 4, background: "#E5E7EB", borderRadius: 2, margin: "0 auto 20px" }} />
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
-              <div style={{ fontSize: 18, fontWeight: 800, color: "#0D1421" }}>Confirm Vouch</div>
+              <div style={{ fontSize: 18, fontWeight: 800, color: "var(--text-primary)" }}>Confirm Vouch</div>
               <button
                 onClick={() => !vouching && setModal(null)}
-                style={{ background: "#F5F7FA", border: "none", borderRadius: "50%", width: 32, height: 32, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+                style={{ background: "var(--bg-input)", border: "none", borderRadius: "50%", width: 32, height: 32, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
               >
                 <X size={16} color="#6B7280" />
               </button>
             </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 12, background: "#F9FAFB", borderRadius: 16, padding: "14px", marginBottom: 18 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, background: "var(--bg-input)", borderRadius: 16, padding: "14px", marginBottom: 18 }}>
               <div style={{ width: 44, height: 44, borderRadius: 12, background: `hsl(${(modal.node_id.charCodeAt(0) * 7) % 360},55%,52%)`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                 <span style={{ color: "white", fontSize: 14, fontWeight: 800 }}>{modal.node_id.slice(0, 2)}</span>
               </div>
               <div>
-                <div style={{ fontSize: 14, fontWeight: 700, color: "#0D1421" }}>{modal.node_id.slice(0, 20)}...</div>
-                <div style={{ fontSize: 12, color: "#9CA3AF" }}>{modal.honest_rounds || 0} rounds completed</div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text-primary)" }}>{modal.node_id.slice(0, 20)}...</div>
+                <div style={{ fontSize: 12, color: "var(--text-secondary)" }}>{modal.honest_rounds || 0} rounds completed</div>
               </div>
             </div>
-            <div style={{ background: "#F9FAFB", borderRadius: 16, padding: "14px", marginBottom: 16 }}>
+            <div style={{ background: "var(--bg-input)", borderRadius: 16, padding: "14px", marginBottom: 16 }}>
               {(() => {
                 const targetNonce = modal.pow_nonce || 0;
                 const baseDelta = config?.VOUCH_DELTA || 0.15;
@@ -433,13 +433,13 @@ export default function Vouch() {
                 return (
                   <>
                     {[
-                      { label: "Target PoW Nonce", value: `#${targetNonce.toLocaleString()}`, color: "#0D1421" },
-                      { label: "Base Multiplier", value: `${(baseDelta * 100).toFixed(1)}%`, color: "#6B7280" },
+                      { label: "Target PoW Nonce", value: `#${targetNonce.toLocaleString()}`, color: "var(--text-primary)" },
+                      { label: "Base Multiplier", value: `${(baseDelta * 100).toFixed(1)}%`, color: "var(--text-secondary)" },
                       { label: "Work Leverage", value: `-${(workDiscount * 100).toFixed(2)}%`, color: "#05C48F" },
                       { label: "Your Effective Stake", value: `${finalStake} POR`, color: "#0052FF", bold: true },
                     ].map(({ label, value, color, bold }) => (
                       <div key={label} style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid #F0F0F0" }}>
-                        <span style={{ fontSize: 12, color: "#6B7280" }}>{label}</span>
+                        <span style={{ fontSize: 12, color: "var(--text-secondary)" }}>{label}</span>
                         <span style={{ fontSize: 13, fontWeight: bold ? 800 : 700, color }}>{value}</span>
                       </div>
                     ))}
@@ -457,7 +457,7 @@ export default function Vouch() {
               <button
                 onClick={() => !vouching && setModal(null)}
                 disabled={vouching}
-                style={{ flex: 1, background: "#F5F7FA", color: "#6B7280", border: "none", borderRadius: 14, padding: "15px", fontSize: 15, fontWeight: 700, cursor: "pointer" }}
+                style={{ flex: 1, background: "var(--bg-input)", color: "var(--text-secondary)", border: "none", borderRadius: 14, padding: "15px", fontSize: 15, fontWeight: 700, cursor: "pointer" }}
               >
                 Cancel
               </button>
@@ -475,3 +475,5 @@ export default function Vouch() {
     </div>
   );
 }
+
+

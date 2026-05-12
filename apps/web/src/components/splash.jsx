@@ -73,7 +73,7 @@ export default function Splash({ onDone }) {
         inset:          0,
         zIndex:         100,
         // App background color
-        background:     "#F5F7FA",
+        background: "var(--bg-input)",
         display:        "flex",
         flexDirection:  "column",
         alignItems:     "center",
@@ -307,7 +307,7 @@ export default function Splash({ onDone }) {
         }}>
           {/* Tagline */}
           <span style={{
-            color:         "#0D1421",
+            color: "var(--text-primary)",
             fontSize:      18,
             fontWeight:    700,
             letterSpacing: "0.3px",
@@ -368,7 +368,7 @@ export default function Splash({ onDone }) {
             boxShadow: "0 0 6px rgba(5,196,143,0.7)",
           }} />
           <span style={{
-            color:         "#6B7280",
+            color: "var(--text-secondary)",
             fontSize:      11,
             fontWeight:    600,
             letterSpacing: "0.5px",
@@ -396,3 +396,5 @@ export default function Splash({ onDone }) {
     </div>
   );
 }
+
+

@@ -109,8 +109,8 @@ export function NodeStatusBadge({ style }) {
     display:      "flex",
     alignItems:   "center",
     gap:          6,
-    padding:      "8px 14px",
-    borderRadius: 12,
+    padding:      "6px 10px",
+    borderRadius: 10,
     border:       "none",
     fontSize:     13,
     fontWeight:   700,
@@ -134,18 +134,9 @@ export function NodeStatusBadge({ style }) {
   }
 
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-      <div style={{
-        fontSize: 10, fontWeight: 800, color: "#0052FF",
-        background: "#EEF3FF", padding: "2px 6px", borderRadius: 6,
-        textTransform: "uppercase"
-      }}>
-        PoR Network
-      </div>
-      <div style={{ ...baseStyle, background: "#ECFDF5", color: "#059669" }}>
-        <span style={{ fontSize: 10 }}>●</span>
-        {`${nodeId.slice(0, 6)}…${nodeId.slice(-4)}`}
-      </div>
+    <div style={{ ...baseStyle, background: "#ECFDF5", color: "#059669", whiteSpace: "nowrap" }}>
+      <span style={{ fontSize: 10 }}>●</span>
+      Online
     </div>
   );
 }

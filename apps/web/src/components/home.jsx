@@ -31,7 +31,7 @@ const ACTIVITY_META = {
   send: { color: "#EF4444", bg: "#FEF2F2", Icon: ArrowUpRight },
   receive: { color: "#10B981", bg: "#ECFDF5", Icon: ArrowDownLeft },
   swap: { color: "#3B82F6", bg: "#EFF6FF", Icon: Repeat },
-  default: { color: "#6B7280", bg: "#F9FAFB", Icon: Zap },
+  default: { color: "var(--text-secondary)", bg: "#F9FAFB", Icon: Zap },
 };
 
 export default function Home() {
@@ -74,7 +74,7 @@ export default function Home() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         style={{
-          background: "white",
+          background: "var(--bg-card)",
           borderRadius: 24,
           padding: "24px 20px",
           marginBottom: 20,
@@ -93,7 +93,7 @@ export default function Home() {
             <div
               style={{
                 fontSize: 12,
-                color: "#9CA3AF",
+                color: "var(--text-secondary)",
                 fontWeight: 600,
                 marginBottom: 6,
               }}
@@ -104,7 +104,7 @@ export default function Home() {
               style={{
                 fontSize: 36,
                 fontWeight: 800,
-                color: "#0D1421",
+                color: "var(--text-primary)",
                 letterSpacing: -1.5,
                 display: "flex",
                 alignItems: "center",
@@ -118,7 +118,7 @@ export default function Home() {
             <div
               style={{
                 fontSize: 13,
-                color: "#6B7280",
+                color: "var(--text-secondary)",
                 marginTop: 4,
               }}
             >
@@ -131,7 +131,7 @@ export default function Home() {
               width: 40,
               height: 40,
               borderRadius: "50%",
-              background: "#F5F7FA",
+              background: "var(--bg-input)",
               border: "none",
               display: "flex",
               alignItems: "center",
@@ -170,7 +170,7 @@ export default function Home() {
               key={label}
               onClick={() => modal ? setActiveModal(modal) : setActiveTab("merit")}
               style={{
-                background: "#F9FAFB",
+                background: "var(--bg-input)",
                 borderRadius: 14,
                 padding: "14px 8px",
                 border: "none",
@@ -198,7 +198,7 @@ export default function Home() {
                 style={{
                   fontSize: 11,
                   fontWeight: 600,
-                  color: "#6B7280",
+                  color: "var(--text-secondary)",
                 }}
               >
                 {label}
@@ -223,22 +223,22 @@ export default function Home() {
             label: "Peers",
             value: peersCount,
             icon: <Globe size={22} color="#05C48F" />,
-            color: peersCount > 0 ? "#05C48F" : "#9CA3AF",
-            bg: peersCount > 0 ? "#ECFDF5" : "#F9FAFB",
+            color: peersCount > 0 ? "#05C48F" : "var(--text-secondary)",
+            bg: peersCount > 0 ? "rgba(5, 196, 143, 0.12)" : "var(--bg-input)",
           },
           {
             label: "Block Height",
             value: `#${chainHeight}`,
             icon: <Box size={22} color="#0052FF" />,
             color: "#0052FF",
-            bg: "#EEF3FF",
+            bg: "rgba(0, 82, 255, 0.1)",
           },
           {
             label: "Staked",
             value: `${walletStaked.toFixed(2)} POR`,
             icon: <Lock size={22} color="#F59E0B" />,
-            color: walletStaked > 0 ? "#F59E0B" : "#9CA3AF",
-            bg: walletStaked > 0 ? "#FFFBEB" : "#F9FAFB",
+            color: walletStaked > 0 ? "#F59E0B" : "var(--text-secondary)",
+            bg: walletStaked > 0 ? "rgba(245, 158, 11, 0.12)" : "var(--bg-input)",
           },
         ].map(({ label, value, icon, color, bg }) => (
           <motion.div 
@@ -254,7 +254,7 @@ export default function Home() {
             <div style={{ fontSize: 14, fontWeight: 800, color, letterSpacing: -0.5 }}>
               {value}
             </div>
-            <div style={{ fontSize: 10, color: "#9CA3AF", fontWeight: 600, marginTop: 2 }}>
+            <div style={{ fontSize: 10, color: "var(--text-secondary)", fontWeight: 600, marginTop: 2 }}>
               {label.toUpperCase()}
             </div>
           </motion.div>
@@ -331,15 +331,64 @@ export default function Home() {
             </div>
             <div
               style={{
-                color: "white",
-                fontSize: 56,
-                fontWeight: 800,
-                lineHeight: 1,
-                letterSpacing: -2,
+                position: "relative",
+                width: 90,
+                height: 90,
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                margin: "4px 0",
               }}
             >
-              {repPercent}
-              <span style={{ fontSize: 28, fontWeight: 700 }}>%</span>
+              {/* Radial Progress Ring */}
+              <svg width="90" height="90" viewBox="0 0 100 100" style={{ position: "absolute", top: 0, left: 0 }}>
+                {/* Base Background Ring */}
+                <circle
+                  cx="50"
+                  cy="50"
+                  r="44"
+                  fill="none"
+                  stroke="rgba(255, 255, 255, 0.15)"
+                  strokeWidth="5"
+                />
+                {/* Animated Completion Ring */}
+                <motion.circle
+                  cx="50"
+                  cy="50"
+                  r="44"
+                  fill="none"
+                  stroke="#FFFFFF"
+                  strokeWidth="5"
+                  strokeLinecap="round"
+                  transform="rotate(-90 50 50)"
+                  initial={{ strokeDasharray: "276.46", strokeDashoffset: "276.46" }}
+                  animate={{ strokeDashoffset: (276.46 * (1 - reputation)).toString() }}
+                  transition={{ duration: 1.2, ease: "easeOut", delay: 0.3 }}
+                />
+              </svg>
+
+              {/* Content Inside Ring */}
+              <div
+                style={{
+                  position: "relative",
+                  color: "white",
+                  fontSize: 26,
+                  fontWeight: 900,
+                  lineHeight: 1.1,
+                  letterSpacing: -0.5,
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  gap: 1,
+                }}
+              >
+                <Award size={15} color="rgba(255,255,255,0.9)" style={{ marginBottom: -2 }} />
+                <div style={{ display: "flex", alignItems: "baseline" }}>
+                  {repPercent}
+                  <span style={{ fontSize: 13, fontWeight: 700, opacity: 0.9, marginLeft: 1 }}>%</span>
+                </div>
+              </div>
             </div>
             <div
               style={{
@@ -444,7 +493,7 @@ export default function Home() {
         >
           <div
             style={{
-              background: "white",
+              background: "var(--bg-card)",
               borderRadius: 18,
               padding: "16px 14px",
               boxShadow: "0 1px 6px rgba(0,0,0,0.06)",
@@ -458,7 +507,7 @@ export default function Home() {
                 marginBottom: 12,
               }}
             >
-              <span style={{ fontSize: 11, color: "#9CA3AF", fontWeight: 600 }}>
+              <span style={{ fontSize: 11, color: "var(--text-secondary)", fontWeight: 600 }}>
                 Tasks Done
               </span>
               <div
@@ -475,10 +524,10 @@ export default function Home() {
                 <CheckCircle size={14} color="#05C48F" />
               </div>
             </div>
-            <div style={{ fontSize: 20, fontWeight: 800, color: "#0D1421", marginBottom: 3 }}>
+            <div style={{ fontSize: 20, fontWeight: 800, color: "var(--text-primary)", marginBottom: 3 }}>
               {tasksCompleted} Verified
             </div>
-            <div style={{ fontSize: 11, color: "#9CA3AF" }}>
+            <div style={{ fontSize: 11, color: "var(--text-secondary)" }}>
               {phase === 1 ? "Proof of Honesty" : "Phase 1 Complete"}
             </div>
           </div>
@@ -592,7 +641,7 @@ export default function Home() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.3 }}
         style={{
-          background: "white",
+          background: "var(--bg-card)",
           borderRadius: 20,
           overflow: "hidden",
           marginBottom: 20,
@@ -608,7 +657,7 @@ export default function Home() {
             justifyContent: "space-between",
           }}
         >
-          <span style={{ fontSize: 15, fontWeight: 700, color: "#0D1421" }}>
+          <span style={{ fontSize: 15, fontWeight: 700, color: "var(--text-primary)" }}>
             Assets
           </span>
           <span style={{ fontSize: 12, color: "#0052FF", fontWeight: 600 }}>
@@ -618,7 +667,7 @@ export default function Home() {
         {tokens.map((token, i) => (
           <motion.div
             key={token.symbol}
-            whileHover={{ background: "#F9FAFB" }}
+            whileHover={{ background: "var(--bg-input)" }}
             style={{
               padding: "14px 16px",
               borderBottom:
@@ -634,7 +683,7 @@ export default function Home() {
                 width: 42,
                 height: 42,
                 borderRadius: 12,
-                background: "#F3F4F6",
+                background: "var(--bg-input)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -649,12 +698,12 @@ export default function Home() {
                 style={{
                   fontSize: 14,
                   fontWeight: 700,
-                  color: "#0D1421",
+                  color: "var(--text-primary)",
                 }}
               >
                 {token.symbol}
               </div>
-              <div style={{ fontSize: 11, color: "#9CA3AF", marginTop: 1 }}>
+              <div style={{ fontSize: 11, color: "var(--text-secondary)", marginTop: 1 }}>
                 {token.balance >= 1000
                   ? token.balance.toLocaleString()
                   : token.balance.toFixed(2)}{" "}
@@ -666,7 +715,7 @@ export default function Home() {
                 style={{
                   fontSize: 14,
                   fontWeight: 700,
-                  color: "#0D1421",
+                  color: "var(--text-primary)",
                 }}
               >
                 ${token.value.toFixed(2)}
@@ -690,7 +739,7 @@ export default function Home() {
       {/* Recent Activity */}
       <div
         style={{
-          background: "white",
+          background: "var(--bg-card)",
           borderRadius: 20,
           overflow: "hidden",
           boxShadow: "0 1px 6px rgba(0,0,0,0.06)",
@@ -706,7 +755,7 @@ export default function Home() {
             justifyContent: "space-between",
           }}
         >
-          <span style={{ fontSize: 15, fontWeight: 700, color: "#0D1421" }}>
+          <span style={{ fontSize: 15, fontWeight: 700, color: "var(--text-primary)" }}>
             Recent Activity
           </span>
           <button
@@ -760,7 +809,7 @@ export default function Home() {
                   style={{
                     fontSize: 13,
                     fontWeight: 600,
-                    color: "#0D1421",
+                    color: "var(--text-primary)",
                     whiteSpace: "nowrap",
                     overflow: "hidden",
                     textOverflow: "ellipsis",
@@ -768,7 +817,7 @@ export default function Home() {
                 >
                   {activity.message}
                 </div>
-                <div style={{ fontSize: 11, color: "#9CA3AF", marginTop: 2 }}>
+                <div style={{ fontSize: 11, color: "var(--text-secondary)", marginTop: 2 }}>
                   {activity.time}
                 </div>
               </div>
@@ -780,3 +829,5 @@ export default function Home() {
     </div>
   );
 }
+
+

@@ -54,9 +54,11 @@ const INITIAL_STATE = {
 
   // ── Notifications ─────────────────────────────────────────────────────────────
   notifications: [
-    { id: 1, message: "Welcome to the PoR Network! Complete 20 tasks to advance.", read: false, time: "just now" },
-    { id: 2, message: "Phase 1 active — earn reputation by completing tasks.",       read: false, time: "just now" },
+    { id: 1, type: "welcome", message: "Welcome to the PoR Network! Complete 20 tasks to advance.", read: false, time: "just now" },
+    { id: 2, type: "phase",   message: "Phase 1 active — earn reputation by completing tasks.",       read: false, time: "just now" },
   ],
+  // ── Theme ──
+  isDarkMode: false,
 };
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
@@ -69,6 +71,8 @@ function computeBoost(rep) {
 
 export const useStore = create((set) => ({
   ...INITIAL_STATE,
+
+  toggleDarkMode: () => set((state) => ({ isDarkMode: !state.isDarkMode })),
 
   // ── Basic setters ────────────────────────────────────────────────────────────
   setWallet:         (wallet)         => set({ wallet }),
@@ -105,8 +109,10 @@ export const useStore = create((set) => ({
     set((state) => {
       const meritBoost = computeBoost(normalized.reputation);
 
-      // Generate a graduation activity if we just crossed into Full Node
+      // Generate dynamic triggers if we just crossed into Full Node
       const justGraduated = normalized.graduated && !state.graduated;
+
+      // 1. Update Activities array
       const activities = justGraduated
         ? [
             {
@@ -117,6 +123,33 @@ export const useStore = create((set) => ({
             ...state.activities,
           ]
         : state.activities;
+
+      // 2. Update Notifications array
+      let notifications = state.notifications;
+      
+      if (!state.nodeId && normalized.nodeId) {
+        if (normalized.graduated) {
+          notifications = [
+            { id: 101, type: "security", message: "Node fully graduated and secured.", read: false, time: "online" },
+            { id: 102, type: "governance", message: "Governance active — you can now vote on proposals.", read: false, time: "online" },
+          ];
+        } else if (normalized.phase >= 2) {
+          notifications = [
+            { id: 103, type: "phase", message: "Phase " + normalized.phase + " active. Complete cycles for graduation.", read: false, time: "just now" },
+          ];
+        } else {
+          notifications = [
+            { id: 104, type: "welcome", message: "Welcome! Complete 20 cryptographic tasks to advance.", read: false, time: "just now" },
+          ];
+        }
+      }
+      
+      if (justGraduated) {
+        notifications = [
+          { id: Date.now(), type: "celebration", message: "Congratulations! You have graduated to Full Node status.", read: false, time: "just now" },
+          ...notifications,
+        ];
+      }
 
       return {
         // Identity
@@ -155,6 +188,7 @@ export const useStore = create((set) => ({
         eligibleToVote:    normalized.eligibleToVote,
 
         activities,
+        notifications,
       };
     }),
 

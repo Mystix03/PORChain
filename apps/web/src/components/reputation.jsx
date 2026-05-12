@@ -54,14 +54,14 @@ const CustomTooltip = ({ active, payload, label }) => {
   return (
     <div
       style={{
-        background: "white",
+        background: "var(--bg-card)",
         borderRadius: 12,
         padding: "10px 14px",
         boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
         fontSize: 13,
       }}
     >
-      <div style={{ color: "#9CA3AF", marginBottom: 4 }}>{label}</div>
+      <div style={{ color: "var(--text-secondary)", marginBottom: 4 }}>{label}</div>
       <div style={{ fontWeight: 800, color: "#0052FF", fontSize: 16 }}>
         {Math.round(payload[0].value * 100)}%
       </div>
@@ -92,7 +92,7 @@ export default function Reputation() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         style={{
-          background: "white",
+          background: "var(--bg-card)",
           borderRadius: 24,
           padding: "22px 20px 0",
           marginBottom: 20,
@@ -112,7 +112,7 @@ export default function Reputation() {
             <div
               style={{
                 fontSize: 11,
-                color: "#9CA3AF",
+                color: "var(--text-secondary)",
                 fontWeight: 600,
                 letterSpacing: 1,
                 marginBottom: 6,
@@ -124,7 +124,7 @@ export default function Reputation() {
               style={{
                 fontSize: 52,
                 fontWeight: 800,
-                color: "#0D1421",
+                color: "var(--text-primary)",
                 lineHeight: 1,
                 letterSpacing: -2,
               }}
@@ -273,7 +273,7 @@ export default function Reputation() {
           <div
             key={label}
             style={{
-              background: "white",
+              background: "var(--bg-card)",
               borderRadius: 16,
               padding: "14px 10px",
               textAlign: "center",
@@ -284,7 +284,7 @@ export default function Reputation() {
             <div
               style={{
                 fontSize: 10,
-                color: "#9CA3AF",
+                color: "var(--text-secondary)",
                 marginTop: 4,
                 fontWeight: 500,
               }}
@@ -326,7 +326,7 @@ export default function Reputation() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.3 }}
         style={{
-          background: "white",
+          background: "var(--bg-card)",
           borderRadius: 20,
           marginBottom: 16,
           overflow: "hidden",
@@ -343,7 +343,7 @@ export default function Reputation() {
           }}
         >
           <Shield size={15} color="#0052FF" />
-          <span style={{ fontSize: 14, fontWeight: 700, color: "#0D1421" }}>
+          <span style={{ fontSize: 14, fontWeight: 700, color: "var(--text-primary)" }}>
             Vouch History
           </span>
         </div>
@@ -372,10 +372,10 @@ export default function Reputation() {
               <Shield size={18} color="#0052FF" />
             </div>
             <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 13, fontWeight: 600, color: "#0D1421" }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)" }}>
                 Vouched by {v.wallet}
               </div>
-              <div style={{ fontSize: 11, color: "#9CA3AF", marginTop: 1 }}>
+              <div style={{ fontSize: 11, color: "var(--text-secondary)", marginTop: 1 }}>
                 Stake: {v.stake} · {v.date}
               </div>
             </div>
@@ -400,7 +400,7 @@ export default function Reputation() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.4 }}
         style={{
-          background: "white",
+          background: "var(--bg-card)",
           borderRadius: 20,
           marginBottom: 16,
           overflow: "hidden",
@@ -418,18 +418,18 @@ export default function Reputation() {
         >
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <Award size={15} color="#8B5CF6" />
-            <span style={{ fontSize: 14, fontWeight: 700, color: "#0D1421" }}>
+            <span style={{ fontSize: 14, fontWeight: 700, color: "var(--text-primary)" }}>
               Score History
             </span>
           </div>
           <button
             style={{
-              background: "#F5F7FA",
+              background: "var(--bg-input)",
               border: "none",
               borderRadius: 8,
               padding: "5px 10px",
               fontSize: 11,
-              color: "#6B7280",
+              color: "var(--text-secondary)",
               fontWeight: 600,
               cursor: "pointer",
               display: "flex",
@@ -474,11 +474,11 @@ export default function Reputation() {
               </div>
               <div style={{ flex: 1 }}>
                 <div
-                  style={{ fontSize: 13, fontWeight: 500, color: "#0D1421" }}
+                  style={{ fontSize: 13, fontWeight: 500, color: "var(--text-primary)" }}
                 >
                   {e.label}
                 </div>
-                <div style={{ fontSize: 11, color: "#9CA3AF", marginTop: 1 }}>
+                <div style={{ fontSize: 11, color: "var(--text-secondary)", marginTop: 1 }}>
                   {e.date}
                 </div>
               </div>
@@ -499,3 +499,5 @@ export default function Reputation() {
     </div>
   );
 }
+
+

@@ -12,6 +12,9 @@ import {
   Check,
   ChevronRight,
   Shield,
+  Layers,
+  Moon,
+  Sun,
 } from "lucide-react";
 
 const PRIVATE_KEY_MOCK =
@@ -20,14 +23,15 @@ const PUBLIC_KEY_MOCK =
   "7xKq9Ab3mNpQrStUvWxYzBcDeFgHiJkLmNoPqRsTuVwXyZ12345678901234567890";
 
 export default function Settings({ onClose, nodeId }) {
-  const isDarkMode = false; // Hardcoded to match web app's current theme
+  const { setActiveTab, isDarkMode, toggleDarkMode } = useStore();
 
-  // Theme colors
-  const bgColor = "#E8EDF5";
-  const cardBg = "#FFFFFF";
-  const textPrimary = "#0D1421";
-  const textSecondary = "#6B7280";
-  const borderColor = "#F0F2F5";
+
+  // Theme semantic variables
+  const bgColor = "var(--bg-shell)";
+  const cardBg = "var(--bg-card)";
+  const textPrimary = "var(--text-primary)";
+  const textSecondary = "var(--text-secondary)";
+  const borderColor = "var(--border-main)";
   const accentBlue = "#0052FF";
 
   // Card A — Vault state
@@ -118,7 +122,7 @@ export default function Settings({ onClose, nodeId }) {
         left: 0,
         right: 0,
         bottom: 0,
-        backgroundColor: "#F5F7FA",
+        backgroundColor: "var(--bg-app)",
         zIndex: 100,
         display: "flex",
         flexDirection: "column",
@@ -142,7 +146,7 @@ export default function Settings({ onClose, nodeId }) {
           display: "flex",
           alignItems: "center",
           gap: 14,
-          backgroundColor: "#FFFFFF",
+          backgroundColor: cardBg,
           borderBottom: "1px solid " + borderColor,
           padding: "52px 20px 16px 20px",
         }}
@@ -153,7 +157,7 @@ export default function Settings({ onClose, nodeId }) {
             width: 40,
             height: 40,
             borderRadius: "50%",
-            backgroundColor: "#F5F7FA",
+            backgroundColor: "var(--bg-shell)",
             display: "flex",
             justifyContent: "center",
             alignItems: "center",
@@ -397,7 +401,7 @@ export default function Settings({ onClose, nodeId }) {
               display: "flex",
               alignItems: "center",
               gap: 14,
-              backgroundColor: "#F8FAFC",
+              backgroundColor: "var(--bg-input)",
               borderRadius: 14,
               padding: 16,
               marginBottom: 20,
@@ -430,12 +434,12 @@ export default function Settings({ onClose, nodeId }) {
               placeholder="http://localhost:5000"
               style={{
                 flex: 1,
-                backgroundColor: "#F8FAFC",
+                backgroundColor: "var(--bg-input)",
                 borderRadius: 12,
                 padding: "12px 14px",
                 fontSize: 14,
-                color: textPrimary,
-                border: "1px solid " + borderColor,
+                color: "var(--text-primary)",
+                border: "1px solid var(--border-main)",
                 fontFamily: "monospace",
                 outline: "none",
               }}
@@ -469,10 +473,96 @@ export default function Settings({ onClose, nodeId }) {
                 <span style={{ fontSize: 12, fontWeight: "700", color: accentBlue }}>{peers.length} connected</span>
               </div>
             </div>
+
+            <button
+              onClick={() => {
+                setActiveTab("chain");
+                onClose();
+              }}
+              style={{
+                width: "100%",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                backgroundColor: "var(--bg-input)",
+                border: "1px solid var(--border-main)",
+                borderRadius: 12,
+                padding: "14px",
+                cursor: "pointer",
+                marginTop: 6,
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <div style={{ width: 32, height: 32, borderRadius: 8, backgroundColor: "#EEF2FF", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <Layers size={16} color={accentBlue} />
+                </div>
+                <div style={{ textAlign: "left" }}>
+                  <div style={{ fontSize: 13, fontWeight: "700", color: textPrimary }}>Launch Network Explorer</div>
+                  <div style={{ fontSize: 11, color: textSecondary, marginTop: 1 }}>View live chain & block history</div>
+                </div>
+              </div>
+              <ChevronRight size={16} color={textSecondary} />
+            </button>
           </div>
         </div>
 
-        {/* ── CARD C: Danger Zone ── */}
+        {/* ── CARD C: Appearance / Preferences ── */}
+        <div
+          style={{
+            backgroundColor: cardBg,
+            borderRadius: 24,
+            padding: 24,
+            marginBottom: 20,
+            border: "1px solid " + borderColor,
+            boxShadow: "0 2px 10px rgba(0,0,0,0.02)",
+          }}
+        >
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <div
+                style={{
+                  width: 38,
+                  height: 38,
+                  borderRadius: 12,
+                  backgroundColor: "#F3F4F6",
+                  display: "flex",
+                  justifyContent: "center",
+                  alignItems: "center",
+                }}
+              >
+                {isDarkMode ? <Moon size={20} color="#4B5563" /> : <Sun size={20} color="#F59E0B" />}
+              </div>
+              <div>
+                <div style={{ fontSize: 15, fontWeight: "700", color: textPrimary }}>
+                  Dark Mode
+                </div>
+                <div style={{ fontSize: 12, color: textSecondary, marginTop: 1 }}>
+                  Switch appearance
+                </div>
+              </div>
+            </div>
+
+            <div 
+              onClick={toggleDarkMode}
+              style={{
+                width: 52,
+                height: 28,
+                borderRadius: 20,
+                backgroundColor: isDarkMode ? "#10B981" : "#E5E7EB",
+                padding: 3,
+                cursor: "pointer",
+                transition: "background-color 0.3s ease",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: isDarkMode ? "flex-end" : "flex-start",
+              }}
+            >
+              <div style={{ width: 22, height: 22, borderRadius: "50%", backgroundColor: "white", boxShadow: "0 2px 4px rgba(0,0,0,0.1)" }} />
+            </div>
+          </div>
+        </div>
+
+        {/* ── CARD D: Danger Zone ── */}
         <div
           style={{
             backgroundColor: "#FEF2F2",
@@ -528,3 +618,5 @@ export default function Settings({ onClose, nodeId }) {
     </div>
   );
 }
+
+

@@ -142,10 +142,10 @@ export default function Validate() {
 
       {/* ── Vouch requests ───────────────────────────────────────────────────── */}
       <div style={{ marginBottom: 8 }}>
-        <div style={{ fontSize: 15, fontWeight: 800, color: "#0D1421", marginBottom: 4 }}>
+        <div style={{ fontSize: 15, fontWeight: 800, color: "var(--text-primary)", marginBottom: 4 }}>
           Vouch Requests
         </div>
-        <div style={{ fontSize: 12, color: "#9CA3AF", marginBottom: 14 }}>
+        <div style={{ fontSize: 12, color: "var(--text-secondary)", marginBottom: 14 }}>
           Stake 2.5 POR as collateral to sponsor a new node into Phase 2
         </div>
       </div>
@@ -159,7 +159,7 @@ export default function Validate() {
 
           return (
             <div key={node.node_id} style={{
-              background: "white", borderRadius: 18,
+              background: "var(--bg-card)", borderRadius: 18,
               boxShadow: alreadyVouched
                 ? "0 0 0 2px #05C48F, 0 2px 8px rgba(5,196,143,0.1)"
                 : "0 1px 5px rgba(0,0,0,0.06)",
@@ -176,8 +176,8 @@ export default function Validate() {
                   <span style={{ color: "white", fontSize: 13, fontWeight: 800 }}>{node.node_id.slice(0, 2)}</span>
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: "#0D1421" }}>{shortId}</div>
-                  <div style={{ fontSize: 11, color: "#9CA3AF", marginTop: 1 }}>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text-primary)" }}>{shortId}</div>
+                  <div style={{ fontSize: 11, color: "var(--text-secondary)", marginTop: 1 }}>
                     {node.honest_rounds || 0} honest rounds
                   </div>
                 </div>
@@ -187,7 +187,7 @@ export default function Validate() {
                     <span style={{ fontSize: 12, fontWeight: 700 }}>Vouched</span>
                   </div>
                 ) : isVouching ? (
-                  <div style={{ display: "flex", alignItems: "center", gap: 5, color: "#9CA3AF" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 5, color: "var(--text-secondary)" }}>
                     <Clock size={14} />
                     <span style={{ fontSize: 12, fontWeight: 600 }}>Pending…</span>
                   </div>
@@ -223,7 +223,7 @@ export default function Validate() {
                   display: "flex", alignItems: "center", justifyContent: "space-between",
                   background: "#FAFBFF",
                 }}>
-                  <span style={{ fontSize: 11, color: "#9CA3AF" }}>
+                  <span style={{ fontSize: 11, color: "var(--text-secondary)" }}>
                     <Lock size={9} style={{ display: "inline", marginRight: 4 }} />
                     Escrow on approval: <strong style={{ color: "#374151" }}>2.5 POR</strong>
                   </span>
@@ -238,10 +238,10 @@ export default function Validate() {
 
       {/* ── Network Security (Slashing) ────────────────────────────────────── */}
       <div style={{ marginBottom: 8 }}>
-        <div style={{ fontSize: 15, fontWeight: 800, color: "#0D1421", marginBottom: 4 }}>
+        <div style={{ fontSize: 15, fontWeight: 800, color: "var(--text-primary)", marginBottom: 4 }}>
           Network Security
         </div>
-        <div style={{ fontSize: 12, color: "#9CA3AF", marginBottom: 14 }}>
+        <div style={{ fontSize: 12, color: "var(--text-secondary)", marginBottom: 14 }}>
           Review Oracle flags and vote to slash malicious nodes
         </div>
       </div>
@@ -317,3 +317,5 @@ export default function Validate() {
     </div>
   );
 }
+
+

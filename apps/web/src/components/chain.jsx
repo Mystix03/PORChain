@@ -46,7 +46,7 @@ export default function Chain() {
         <div style={{ display: "inline-block", animation: "spin 1.5s linear infinite" }}>
           <Layers size={32} color="#0052FF" />
         </div>
-        <div style={{ marginTop: 12, fontSize: 14, color: "#9CA3AF" }}>Synchronizing blocks...</div>
+        <div style={{ marginTop: 12, fontSize: 14, color: "var(--text-secondary)" }}>Synchronizing blocks...</div>
         <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
       </div>
     );
@@ -56,10 +56,10 @@ export default function Chain() {
     <div style={{ padding: "20px 16px 0" }}>
       {/* Header */}
       <div style={{ marginBottom: 20 }}>
-        <div style={{ fontSize: 24, fontWeight: 800, color: "#0D1421", marginBottom: 4 }}>
+        <div style={{ fontSize: 24, fontWeight: 800, color: "var(--text-primary)", marginBottom: 4 }}>
           PoR-Chain Explorer
         </div>
-        <div style={{ fontSize: 13, color: "#9CA3AF", display: "flex", alignItems: "center", gap: 6 }}>
+        <div style={{ fontSize: 13, color: "var(--text-secondary)", display: "flex", alignItems: "center", gap: 6 }}>
           <span style={{ display: "flex", alignItems: "center", gap: 4, color: "#05C48F" }}>
             <Circle size={8} fill="#05C48F" />
             Live Network
@@ -87,7 +87,7 @@ export default function Chain() {
               onClick={() => setSelectedBlock(selectedBlock === block.index ? null : block.index)}
               className={hasTx ? "tx-active" : ""}
               style={{
-                background: "white",
+                background: "var(--bg-card)",
                 borderRadius: 20,
                 padding: "16px",
                 boxShadow: "0 1px 5px rgba(0,0,0,0.06)",
@@ -107,10 +107,10 @@ export default function Chain() {
                   {block.index === 0 ? <Database size={20} color="#0052FF" /> : <Box size={20} color="#6B7280" />}
                 </div>
                 <div>
-                  <div style={{ fontSize: 15, fontWeight: 800, color: "#0D1421" }}>
+                  <div style={{ fontSize: 15, fontWeight: 800, color: "var(--text-primary)" }}>
                     Block #{block.index}
                   </div>
-                  <div style={{ fontSize: 11, color: "#9CA3AF", display: "flex", alignItems: "center", gap: 4 }}>
+                  <div style={{ fontSize: 11, color: "var(--text-secondary)", display: "flex", alignItems: "center", gap: 4 }}>
                     <Clock size={10} />
                     {formatTime(block.timestamp)}
                   </div>
@@ -123,7 +123,7 @@ export default function Chain() {
                 }}>
                   {block.events?.length || 0} TXs
                 </div>
-                <div style={{ fontSize: 10, color: "#9CA3AF" }}>
+                <div style={{ fontSize: 10, color: "var(--text-secondary)" }}>
                   {block.proposer?.slice(0, 8)}...
                 </div>
               </div>
@@ -133,26 +133,26 @@ export default function Chain() {
               <div style={{ marginTop: 16, paddingTop: 16, borderTop: "1px solid #F3F4F6" }}>
                 {/* Hash Info */}
                 <div style={{ marginBottom: 16 }}>
-                  <div style={{ fontSize: 10, fontWeight: 700, color: "#9CA3AF", textTransform: "uppercase", marginBottom: 6 }}>Block Hash</div>
-                  <code style={{ fontSize: 11, background: "#F9FAFB", padding: "8px 10px", borderRadius: 8, display: "block", color: "#374151", wordBreak: "break-all", border: "1px solid #F0F2F5" }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: "var(--text-secondary)", textTransform: "uppercase", marginBottom: 6 }}>Block Hash</div>
+                  <code style={{ fontSize: 11, background: "var(--bg-input)", padding: "8px 10px", borderRadius: 8, display: "block", color: "#374151", wordBreak: "break-all", border: "1px solid #F0F2F5" }}>
                     {block.hash}
                   </code>
                 </div>
 
                 {/* Previous Hash */}
                 <div style={{ marginBottom: 16 }}>
-                  <div style={{ fontSize: 10, fontWeight: 700, color: "#9CA3AF", textTransform: "uppercase", marginBottom: 6 }}>Previous Hash</div>
-                  <code style={{ fontSize: 11, background: "#F9FAFB", padding: "8px 10px", borderRadius: 8, display: "block", color: "#374151", wordBreak: "break-all", border: "1px solid #F0F2F5" }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: "var(--text-secondary)", textTransform: "uppercase", marginBottom: 6 }}>Previous Hash</div>
+                  <code style={{ fontSize: 11, background: "var(--bg-input)", padding: "8px 10px", borderRadius: 8, display: "block", color: "#374151", wordBreak: "break-all", border: "1px solid #F0F2F5" }}>
                     {block.previous_hash || "—"}
                   </code>
                 </div>
 
                 {/* Transactions */}
                 <div>
-                  <div style={{ fontSize: 10, fontWeight: 700, color: "#9CA3AF", textTransform: "uppercase", marginBottom: 10 }}>Transactions</div>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: "var(--text-secondary)", textTransform: "uppercase", marginBottom: 10 }}>Transactions</div>
                   <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                     {(block.events || []).length === 0 ? (
-                      <div style={{ fontSize: 12, color: "#9CA3AF", fontStyle: "italic", padding: "4px 0" }}>No transactions in this block</div>
+                      <div style={{ fontSize: 12, color: "var(--text-secondary)", fontStyle: "italic", padding: "4px 0" }}>No transactions in this block</div>
                     ) : (
                       block.events.map((ev, i) => (
                         <div key={i} style={{ 
@@ -179,7 +179,7 @@ export default function Chain() {
                             )}
                           </div>
                           {ev.type === 'SEND' && (
-                            <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 10, color: "#6B7280" }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 10, color: "var(--text-secondary)" }}>
                               <span style={{ fontFamily: "monospace" }}>
                                 {ev.from?.length > 12 ? `${ev.from.slice(0, 6)}...${ev.from.slice(-4)}` : ev.from}
                               </span>
@@ -190,7 +190,7 @@ export default function Chain() {
                             </div>
                           )}
                           {ev.type === 'GENESIS' && (
-                            <div style={{ fontSize: 10, color: "#6B7280" }}>{ev.data?.note || "Protocol Launch"}</div>
+                            <div style={{ fontSize: 10, color: "var(--text-secondary)" }}>{ev.data?.note || "Protocol Launch"}</div>
                           )}
                         </div>
                       ))
@@ -206,3 +206,5 @@ export default function Chain() {
     </div>
   );
 }
+
+

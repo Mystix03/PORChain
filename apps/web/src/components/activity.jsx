@@ -21,7 +21,7 @@ const ACTIVITY_META = {
   UNSTAKE: { color: "#F59E0B", bg: "#FFFBEB", Icon: Lock, label: "Unstaked" },
   SLASH: { color: "#DC2626", bg: "#FEF2F2", Icon: Slash, label: "Slashed" },
   swap: { color: "#3B82F6", bg: "#EFF6FF", Icon: Repeat, label: "Swapped" },
-  default: { color: "#6B7280", bg: "#F9FAFB", Icon: Zap, label: "Activity" },
+  default: { color: "var(--text-secondary)", bg: "#F9FAFB", Icon: Zap, label: "Activity" },
 };
 
 /** Format a Unix timestamp into a human-readable relative time string */
@@ -106,10 +106,10 @@ export default function Activity() {
     <div style={{ padding: "20px 16px 0" }}>
       {/* Header */}
       <div style={{ marginBottom: 20 }}>
-        <div style={{ fontSize: 24, fontWeight: 800, color: "#0D1421", marginBottom: 4 }}>
+        <div style={{ fontSize: 24, fontWeight: 800, color: "var(--text-primary)", marginBottom: 4 }}>
           Activity
         </div>
-        <div style={{ fontSize: 13, color: "#9CA3AF" }}>
+        <div style={{ fontSize: 13, color: "var(--text-secondary)" }}>
           On-chain transactions &amp; reputation events
         </div>
       </div>
@@ -163,18 +163,23 @@ export default function Activity() {
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             style={{
-              background: "white", borderRadius: 20, padding: "48px 20px",
+              background: "var(--bg-card)", borderRadius: 20, padding: "48px 20px",
               textAlign: "center", boxShadow: "0 1px 6px rgba(0,0,0,0.06)",
             }}
           >
             <div style={{ width: 64, height: 64, borderRadius: "50%", background: "#F3F4F6", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
               <Inbox size={32} color="#9CA3AF" />
             </div>
-            <div style={{ fontSize: 16, fontWeight: 700, color: "#0D1421", marginBottom: 6 }}>
+            <div style={{ fontSize: 16, fontWeight: 700, color: "var(--text-primary)", marginBottom: 6 }}>
               No Activity Yet
             </div>
-            <div style={{ fontSize: 13, color: "#9CA3AF" }}>
-              Your transactions and reputation events will appear here
+            <div style={{ fontSize: 13, color: "var(--text-secondary)" }}>
+              {(() => {
+                if (activeFilter === "Transactions") return "Your sent and received transfers will appear here";
+                if (activeFilter === "Staking") return "Your staking and slashing history will appear here";
+                if (activeFilter === "PoR Events") return "Your task verification and network events will appear here";
+                return "Your transactions and reputation events will appear here";
+              })()}
             </div>
           </motion.div>
         ) : (
@@ -216,11 +221,11 @@ export default function Activity() {
                     <Icon size={22} color={color} />
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 14, fontWeight: 700, color: "#0D1421", marginBottom: 2 }}>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text-primary)", marginBottom: 2 }}>
                       {activity.message}
                     </div>
                     <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                      <span style={{ fontSize: 11, color: "#9CA3AF" }}>{activity.time}</span>
+                      <span style={{ fontSize: 11, color: "var(--text-secondary)" }}>{activity.time}</span>
                       <div style={{ width: 3, height: 3, borderRadius: "50%", background: "#D1D5DB" }} />
                       <span style={{ fontSize: 11, color: activity.isOnChain ? "#0052FF" : color, fontWeight: 600 }}>
                         {activity.isOnChain ? (activity.blockLabel ?? label) : label}
@@ -250,8 +255,8 @@ export default function Activity() {
       {/* Load more */}
       {merged.length >= 60 && (
         <button style={{
-          width: "100%", background: "white", color: "#0052FF",
-          border: "1px solid #E5E7EB", borderRadius: 14, padding: "14px",
+          width: "100%", background: "var(--bg-card)", color: "#0052FF",
+          border: "1px solid var(--border-main)", borderRadius: 14, padding: "14px",
           fontSize: 14, fontWeight: 700, cursor: "pointer", marginTop: 16,
         }}>
           Load More
@@ -261,3 +266,4 @@ export default function Activity() {
     </div>
   );
 }
+

@@ -252,7 +252,7 @@ export default function Merit() {
   // ── Stepper Component ──────────────────────────────────────────────────────
 
   const Stepper = (
-    <div style={{ background: "white", borderRadius: 20, padding: "20px", marginBottom: 20, boxShadow: "0 1px 6px rgba(0,0,0,0.06)" }}>
+    <div style={{ background: "var(--bg-card)", borderRadius: 20, padding: "20px", marginBottom: 20, boxShadow: "0 1px 6px rgba(0,0,0,0.06)" }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
         {[
           { n: 1, label: "Candidate", icon: <Cpu size={14} /> },
@@ -298,14 +298,14 @@ export default function Merit() {
     return (
       <div style={{ padding: "20px 16px 0" }}>
         {Stepper}
-        <div style={{ background: "white", borderRadius: 20, padding: "18px 16px", marginBottom: 16, boxShadow: "0 1px 6px rgba(0,0,0,0.06)" }}>
+        <div style={{ background: "var(--bg-card)", borderRadius: 20, padding: "18px 16px", marginBottom: 16, boxShadow: "0 1px 6px rgba(0,0,0,0.06)" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
             <div>
-              <div style={{ fontSize: 17, fontWeight: 800, color: "#0D1421" }}>Phase 1 — Candidate</div>
-              <div style={{ fontSize: 12, color: "#9CA3AF" }}>Prove your honesty with cryptographic tasks</div>
+              <div style={{ fontSize: 17, fontWeight: 800, color: "var(--text-primary)" }}>Phase 1 — Candidate</div>
+              <div style={{ fontSize: 12, color: "var(--text-secondary)" }}>Prove your honesty with cryptographic tasks</div>
             </div>
           </div>
-          <div style={{ height: 6, background: "#F3F4F6", borderRadius: 3, overflow: "hidden" }}>
+          <div style={{ height: 6, background: "var(--bg-input)", borderRadius: 3, overflow: "hidden" }}>
             <div style={{ height: "100%", background: "#0052FF", width: `${progress}%`, transition: "width 0.4s ease" }} />
           </div>
         </div>
@@ -323,13 +323,13 @@ export default function Merit() {
             {tasks.map(t => {
               const s = taskState[t.task_id] || {};
               return (
-                <div key={t.task_id} style={{ background: "white", borderRadius: 16, padding: "14px", display: "flex", alignItems: "center", gap: 12 }}>
+                <div key={t.task_id} style={{ background: "var(--bg-card)", borderRadius: 16, padding: "14px", display: "flex", alignItems: "center", gap: 12 }}>
                   <div style={{ width: 40, height: 40, borderRadius: 12, background: s.found ? "#ECFDF5" : "#F3F4F6", display: "flex", alignItems: "center", justifyContent: "center" }}>
                     {s.found ? <CheckCircle size={20} color="#05C48F" /> : _taskIcon(t.type)}
                   </div>
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: "#0D1421" }}>{t.type.replace('_', ' ')}</div>
-                    <div style={{ fontSize: 10, color: "#9CA3AF" }}>ID: {t.task_id.slice(0, 8)}</div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text-primary)" }}>{t.type.replace('_', ' ')}</div>
+                    <div style={{ fontSize: 10, color: "var(--text-secondary)" }}>ID: {t.task_id.slice(0, 8)}</div>
                   </div>
                   {s.found ? (
                     <span style={{ fontSize: 12, color: "#05C48F", fontWeight: 700 }}>
@@ -369,19 +369,19 @@ export default function Merit() {
     return (
       <div style={{ padding: "20px 16px 0" }}>
         {Stepper}
-        <div style={{ background: "white", borderRadius: 24, padding: "32px 20px", textAlign: "center", boxShadow: "0 1px 8px rgba(0,0,0,0.06)" }}>
+        <div style={{ background: "var(--bg-card)", borderRadius: 24, padding: "32px 20px", textAlign: "center", boxShadow: "0 1px 8px rgba(0,0,0,0.06)" }}>
           <div style={{ width: 64, height: 64, borderRadius: "50%", background: "#EEF3FF", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 20px" }}>
             <Clock size={32} color="#0052FF" />
           </div>
-          <div style={{ fontSize: 20, fontWeight: 800, color: "#0D1421", marginBottom: 8 }}>Phase 2 — Vouching</div>
-          <div style={{ fontSize: 14, color: "#6B7280", marginBottom: 24 }}>
+          <div style={{ fontSize: 20, fontWeight: 800, color: "var(--text-primary)", marginBottom: 8 }}>Phase 2 — Vouching</div>
+          <div style={{ fontSize: 14, color: "var(--text-secondary)", marginBottom: 24 }}>
             Waiting for {vouchesRequired} trusted nodes to vouch for your identity.
           </div>
           
-          <div style={{ background: "#F9FAFB", borderRadius: 16, padding: "16px", marginBottom: 24, textAlign: "left" }}>
-            <div style={{ fontSize: 11, color: "#9CA3AF", fontWeight: 600, marginBottom: 8, textTransform: "uppercase" }}>Your Node ID</div>
+          <div style={{ background: "var(--bg-input)", borderRadius: 16, padding: "16px", marginBottom: 24, textAlign: "left" }}>
+            <div style={{ fontSize: 11, color: "var(--text-secondary)", fontWeight: 600, marginBottom: 8, textTransform: "uppercase" }}>Your Node ID</div>
             <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-              <code style={{ flex: 1, fontSize: 11, color: "#0D1421", wordBreak: "break-all", background: "white", padding: "10px", borderRadius: 10, border: "1px solid #E5E7EB", fontFamily: "monospace" }}>
+              <code style={{ flex: 1, fontSize: 11, color: "var(--text-primary)", wordBreak: "break-all", background: "var(--bg-card)", padding: "10px", borderRadius: 10, border: "1px solid var(--border-main)", fontFamily: "monospace" }}>
                 {nodeId}
               </code>
               <button 
@@ -397,19 +397,19 @@ export default function Merit() {
           </div>
 
           <div style={{ marginBottom: 10, display: "flex", justifyContent: "space-between", fontSize: 12, fontWeight: 700 }}>
-            <span style={{ color: "#0D1421" }}>Vouch Progress</span>
+            <span style={{ color: "var(--text-primary)" }}>Vouch Progress</span>
             <span style={{ color: "#0052FF" }}>{vouchesReceived} / {vouchesRequired}</span>
           </div>
-          <div style={{ height: 10, background: "#F3F4F6", borderRadius: 5, overflow: "hidden", marginBottom: 20 }}>
+          <div style={{ height: 10, background: "var(--bg-input)", borderRadius: 5, overflow: "hidden", marginBottom: 20 }}>
             <div style={{ height: "100%", background: "#05C48F", width: `${progress}%`, transition: "width 0.4s ease" }} />
           </div>
 
           {vouchData.length > 0 && (
             <div style={{ textAlign: "left" }}>
-              <div style={{ fontSize: 12, fontWeight: 700, color: "#0D1421", marginBottom: 12 }}>Received Vouches</div>
+              <div style={{ fontSize: 12, fontWeight: 700, color: "var(--text-primary)", marginBottom: 12 }}>Received Vouches</div>
               {vouchData.map((v, i) => (
                 <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderTop: "1px solid #F3F4F6" }}>
-                  <span style={{ fontSize: 11, fontFamily: "monospace", color: "#6B7280" }}>{v.voucher_id.slice(0, 8)}...</span>
+                  <span style={{ fontSize: 11, fontFamily: "monospace", color: "var(--text-secondary)" }}>{v.voucher_id.slice(0, 8)}...</span>
                   <span style={{ fontSize: 12, fontWeight: 700, color: "#05C48F" }}>+ {v.stake_amount.toFixed(2)} POR</span>
                 </div>
               ))}
@@ -430,16 +430,16 @@ export default function Merit() {
     return (
       <div style={{ padding: "20px 16px 0" }}>
         {Stepper}
-        <div style={{ background: "white", borderRadius: 24, padding: "24px", boxShadow: "0 1px 8px rgba(0,0,0,0.06)", marginBottom: 20 }}>
+        <div style={{ background: "var(--bg-card)", borderRadius: 24, padding: "24px", boxShadow: "0 1px 8px rgba(0,0,0,0.06)", marginBottom: 20 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
             <div style={{ width: 48, height: 48, borderRadius: 14, background: isObs ? "#FFFBEB" : "#EEF3FF", display: "flex", alignItems: "center", justifyContent: "center" }}>
               {isObs ? <Eye size={24} color="#F59E0B" /> : <Award size={24} color="#0052FF" />}
             </div>
             <div>
-              <div style={{ fontSize: 18, fontWeight: 800, color: "#0D1421" }}>
+              <div style={{ fontSize: 18, fontWeight: 800, color: "var(--text-primary)" }}>
                 {isObs ? "Phase 4 — Observation" : "Phase 3 — Probationary"}
               </div>
-              <div style={{ fontSize: 13, color: "#6B7280" }}>
+              <div style={{ fontSize: 13, color: "var(--text-secondary)" }}>
                 Participate in {Math.max(0, (needed || 0) - rounds)} more honest rounds
               </div>
             </div>
@@ -449,14 +449,14 @@ export default function Merit() {
             <span>Round Progress</span>
             <span>{rounds} / {needed}</span>
           </div>
-          <div style={{ height: 12, background: "#F3F4F6", borderRadius: 6, overflow: "hidden", marginBottom: 24 }}>
+          <div style={{ height: 12, background: "var(--bg-input)", borderRadius: 6, overflow: "hidden", marginBottom: 24 }}>
             <div style={{ height: "100%", background: isObs ? "#F59E0B" : "#0052FF", width: `${progress}%`, transition: "width 0.4s ease" }} />
           </div>
 
-          <div style={{ background: "#F9FAFB", borderRadius: 20, padding: "16px", border: "1px solid #F0F2F5" }}>
+          <div style={{ background: "var(--bg-input)", borderRadius: 20, padding: "16px", border: "1px solid #F0F2F5" }}>
             <div style={{ fontSize: 11, color: "#0052FF", fontWeight: 700, marginBottom: 8, textTransform: "uppercase" }}>Consensus Verification</div>
-            <div style={{ fontSize: 14, fontWeight: 700, color: "#0D1421", marginBottom: 8 }}>Pending Block Proposal</div>
-            <div style={{ fontSize: 12, color: "#6B7280", lineHeight: 1.5, marginBottom: 16 }}>
+            <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text-primary)", marginBottom: 8 }}>Pending Block Proposal</div>
+            <div style={{ fontSize: 12, color: "var(--text-secondary)", lineHeight: 1.5, marginBottom: 16 }}>
               As an Observer, you must verify incoming block data. Automated voting is active, but you can manually override to force a sync round.
             </div>
             
@@ -493,12 +493,12 @@ export default function Merit() {
     return (
       <div style={{ padding: "20px 16px 0" }}>
         {Stepper}
-        <div style={{ background: "white", borderRadius: 24, padding: "40px 24px", textAlign: "center", boxShadow: "0 1px 8px rgba(0,0,0,0.06)" }}>
+        <div style={{ background: "var(--bg-card)", borderRadius: 24, padding: "40px 24px", textAlign: "center", boxShadow: "0 1px 8px rgba(0,0,0,0.06)" }}>
           <div style={{ width: 80, height: 80, borderRadius: "50%", background: "#ECFDF5", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 24px" }}>
             <CheckCircle size={40} color="#05C48F" />
           </div>
-          <div style={{ fontSize: 24, fontWeight: 800, color: "#0D1421", marginBottom: 12 }}>Full Validator</div>
-          <div style={{ fontSize: 15, color: "#6B7280", marginBottom: 32 }}>
+          <div style={{ fontSize: 24, fontWeight: 800, color: "var(--text-primary)", marginBottom: 12 }}>Full Validator</div>
+          <div style={{ fontSize: 15, color: "var(--text-secondary)", marginBottom: 32 }}>
             You have successfully graduated to a Full Node. You now have full voting power and can vouch for new nodes.
           </div>
           <button 
@@ -515,7 +515,9 @@ export default function Merit() {
   return (
     <div style={{ padding: "40px 16px", textAlign: "center" }}>
       <Loader size={32} className="animate-spin" color="#0052FF" style={{ margin: "0 auto" }} />
-      <div style={{ marginTop: 12, fontSize: 14, color: "#6B7280" }}>Syncing node state...</div>
+      <div style={{ marginTop: 12, fontSize: 14, color: "var(--text-secondary)" }}>Syncing node state...</div>
     </div>
   );
 }
+
+
