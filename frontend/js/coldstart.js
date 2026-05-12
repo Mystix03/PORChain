@@ -288,53 +288,72 @@ function _renderPhase3(status, myAddr) {
 
 function _renderFullNode(status, myAddr) {
   return `
-    <div class="panel">
-      <div class="panel-header">
-        <span class="panel-icon"><i data-lucide="hexagon"></i></span>
-        <h2>Full Node — Admin Panel</h2>
+    <!-- Status Alert Strip -->
+    <div class="cs-result success" style="margin-bottom: 20px; border-radius: 8px; padding: 12px 20px; display: flex; align-items: center; gap: 12px;">
+      <i data-lucide="hexagon" style="width:20px; height:20px; color: var(--accent-v)"></i>
+      <div style="font-size:12px;">
+        <strong style="color:var(--accent-v)">FULL NODE PRIVILEGES ACTIVE.</strong> 
+        You can now authorize new candidates via collateralized vouching and enforce network security protocol.
       </div>
-      <div class="cs-explain">
-        <p>You are a <strong>Full Node</strong>. You can vouch for Phase 2 nodes to sponsor
-        their onboarding. Your staked tokens act as collateral — if the new node misbehaves,
-        your stake will be slashed.</p>
+    </div>
+
+    <!-- Grid Control Deck -->
+    <div style="display: grid; grid-template-columns: 1.3fr 1fr; gap: 20px; align-items: flex-start;">
+      
+      <!-- Main Action: Vouching Engine -->
+      <div class="panel" style="margin-bottom:0;">
+        <div class="panel-header" style="border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 12px; margin-bottom: 16px;">
+          <span class="panel-icon"><i data-lucide="user-plus"></i></span>
+          <h2 style="font-size: 15px">Vouch Candidate</h2>
+          <div class="info-tip-container" style="position: relative; display: inline-block; margin-left: 8px; cursor: help;">
+             <i data-lucide="info" style="width: 12px; opacity: 0.4;"></i>
+             <div class="info-tip-popup" style="visibility: hidden; opacity: 0; position: absolute; z-index: 99; width: 200px; background: #1f2937; border: 1px solid #374151; color: #fff; border-radius: 6px; padding: 10px; left: 0; bottom: 20px; font-size: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); transition: 0.2s;">
+               Stakes native reputation to sponsor new node onboarding. Collateral increases linearly with network risk.
+             </div>
+          </div>
+          <style>.info-tip-container:hover .info-tip-popup { visibility: visible !important; opacity: 1 !important; }</style>
+        </div>
+
+        <div class="send-form">
+          <input type="text" id="cs-vouch-target" class="input-field" style="font-family: monospace; font-size: 11px; padding: 12px;"
+                 placeholder="Paste Phase 2 Node ID here…" oninput="window.updateStakePreview(this.value, ${status.reputation || 0.1})" />
+          
+          <div id="cs-dynamic-stake-wrap" style="margin-top: 12px">
+             <div class="cs-stake-preview-card" style="padding: 12px; background: rgba(255,255,255,0.02); border: 1px dashed rgba(255,255,255,0.1);">
+                <div class="empty-state sm" style="font-size: 11px; color: var(--text-3)">Awaiting validation sequence...</div>
+             </div>
+          </div>
+
+          <button class="btn-primary btn-glow" id="cs-vouch-btn" style="width:100%; margin-top: 12px; padding: 14px;">
+             <i data-lucide="shield-check"></i> Authorize & Stake
+          </button>
+          <div class="form-msg" id="cs-vouch-msg"></div>
+        </div>
       </div>
 
-      <div class="panel-header" style="margin-top:20px">
-        <span class="panel-icon"><i data-lucide="users"></i></span>
-        <h3>Vouch for a Node</h3>
+      <!-- Secondary Action: Governance -->
+      <div class="panel" style="margin-bottom:0;">
+        <div class="panel-header" style="border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 12px; margin-bottom: 16px;">
+          <span class="panel-icon" style="color: var(--accent-r)"><i data-lucide="shield-alert"></i></span>
+          <h2 style="font-size: 15px">Governance Slash</h2>
+        </div>
+        <div class="send-form">
+          <div style="font-size: 10px; color: var(--accent-r); opacity: 0.8; margin-bottom: 8px; text-transform: uppercase; font-weight: 800;">⚠️ IRREVOCABLE ACTION</div>
+          <input type="text" id="cs-penalize-target" class="input-field" style="font-family: monospace; font-size: 11px; padding: 10px; border-color: rgba(239, 68, 68, 0.2)"
+                 placeholder="Target Node ID…" />
+          <button class="btn-outline" id="cs-penalize-btn" style="width:100%; border-color: var(--accent-r); color: var(--accent-r); margin-top: 10px; background: rgba(239, 68, 68, 0.05); font-size: 11px;">
+            <i data-lucide="ban"></i> Enforce Ban
+          </button>
+          <div class="form-msg" id="cs-penalize-msg"></div>
+        </div>
       </div>
-      <div class="cs-explain">
-        <p>Vouching requires you to stake <strong>POR</strong> as collateral. 
-        A <strong>Work Discount</strong> is applied based on the target node's Proof-of-Work effort.</p>
-      </div>
-      
-      <div id="cs-dynamic-stake-wrap">
-         <div class="cs-stake-preview-card">
-            <div class="empty-state sm">Enter a Node ID below to calculate stake...</div>
+
+      <!-- Ledger Registry Row (Spans full grid) -->
+      <div style="grid-column: 1 / -1; margin-top: 10px;">
+         <div class="panel" style="margin-bottom: 0">
+           ${_renderNodeListPanel()}
          </div>
       </div>
-
-      <div class="send-form" style="margin-top:20px">
-        <input type="text" id="cs-vouch-target" class="input-field"
-               placeholder="Paste Phase 2 Node ID here…" oninput="window.updateStakePreview(this.value, ${status.reputation || 0.1})" />
-        <button class="btn-primary btn-glow" id="cs-vouch-btn" style="width:100%">Vouch & Stake</button>
-        <div class="form-msg" id="cs-vouch-msg"></div>
-      </div>
-
-      <div class="panel-header" style="margin-top:20px">
-        <span class="panel-icon"><i data-lucide="shield-alert"></i></span>
-        <h3>Penalize a Malicious Node</h3>
-      </div>
-      <div class="send-form">
-        <input type="text" id="cs-penalize-target" class="input-field"
-               placeholder="Paste Node ID to penalize…" />
-        <button class="btn-outline" id="cs-penalize-btn" style="border-color: var(--accent-r); color: var(--accent-r)">
-          <i data-lucide="ban"></i> Slash &amp; Ban Node
-        </button>
-        <div class="form-msg" id="cs-penalize-msg"></div>
-      </div>
-
-      ${_renderNodeListPanel()}
     </div>
   `;
 }

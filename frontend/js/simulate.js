@@ -269,7 +269,7 @@ function _createBtn(parent, id, state, asForm = false) {
         <div class="field-label" style="color:var(--accent-r)">DANGER ZONE: Test Network Resilience</div>
         <button class="sim-trigger-btn" style="width:100%; justify-content:center;">
           <span class="sim-trigger-icon"><i data-lucide="skull"></i></span>
-          Simulate Malicious Block (Attacker = This Node)
+          Chain Poisoning Attack
         </button>
       `;
   } else {
