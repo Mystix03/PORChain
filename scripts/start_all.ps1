@@ -91,6 +91,13 @@ Start-Process powershell `
     -WindowStyle Minimized `
     -ArgumentList "-NoExit", "-Command", "$OracleCmd"
 
+# 6. Start the Attack Simulator (Interactive)
+Write-Host "Starting Attack Simulator (Interactive)..." -ForegroundColor Red
+$SimulatorCmd = "cd '$Root'; . '$ActivateScript'; python scripts/attack_simulator.py"
+
+Start-Process powershell `
+    -ArgumentList "-NoExit", "-Command", "$SimulatorCmd"
+
 Write-Host "`n✅ ALL SYSTEMS GO!" -ForegroundColor Green
 Write-Host "Laptop (Static): http://$($IP):4000" -ForegroundColor Cyan
 Write-Host "Phone (React):   http://$($IP):4000" -ForegroundColor Cyan

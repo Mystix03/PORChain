@@ -251,8 +251,6 @@ async def _verify_transactions(events: list, chain: list) -> bool:
 
     return True
 
-    return True
-
 
 # ── Validation ────────────────────────────────────────────────────────────────
 

@@ -11,7 +11,15 @@ START_TIME = time.time()
 
 # ── Network ────────────────────────────────────────────────────────────────────
 NODE_PORT: int = int(os.getenv("NODE_PORT", 5000))
-PEERS: list[str] = [p.strip() for p in os.getenv("PEERS", "").split(",") if p.strip()]
+# PEERS are comma-separated. We normalize them to ensure they have http:// if missing.
+_raw_peers = os.getenv("PEERS", "").split(",")
+PEERS: list[str] = []
+for p in _raw_peers:
+    p = p.strip()
+    if not p: continue
+    if not p.startswith(("http://", "https://")):
+        p = f"http://{p}"
+    PEERS.append(p)
 
 # ── Reputation ─────────────────────────────────────────────────────────────────
 # IEEE paper: λ = 0.8  (Eq. 4 decay factor)

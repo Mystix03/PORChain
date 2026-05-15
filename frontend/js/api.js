@@ -137,7 +137,18 @@ const api = {
     return r.json();
   },
   async getSystemStatus() {
-    const r = await fetch(`${BASE_URL}/system/status`);
-    return r.json();
+    // The ML Oracle sidecar runs on port 5000 and writes its status there.
+    // Ensure all nodes check port 5000 for the Oracle status.
+    let targetUrl = BASE_URL;
+    if (targetUrl.includes('localhost') || targetUrl.includes('127.0.0.1') || targetUrl.match(/169\.254\.\d+\.\d+/)) {
+        // Replace current port with 5000
+        targetUrl = targetUrl.replace(/:\d+/, ':5000');
+    }
+    try {
+        const r = await fetch(`${targetUrl}/system/status`);
+        return r.json();
+    } catch {
+        return { ml_oracle: { status: "offline" } };
+    }
   },
 };

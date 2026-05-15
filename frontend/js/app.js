@@ -64,6 +64,16 @@ async function updateTopbar(state) {
   const badge = document.getElementById('phase-badge');
   badge.textContent = phaseLabel(state.phase);
   badge.className   = 'phase-badge ' + phaseClass(state.phase);
+
+  // Hide ML Oracle tab if not FULL_NODE
+  const mlTab = document.getElementById('nav-ml');
+  if (mlTab) {
+    if (state.phase === 'FULL_NODE') {
+      mlTab.style.display = 'flex';
+    } else {
+      mlTab.style.display = 'none';
+    }
+  }
   
   // Reputation Badge + Gauge
   const repBadge = document.getElementById('rep-score');

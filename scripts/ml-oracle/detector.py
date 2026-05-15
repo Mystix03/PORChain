@@ -139,6 +139,11 @@ class VotingAnomalyDetector:
             return
 
         log.info(f"Fitting IsolationForest on {len(nodes)} nodes ({len(X)} samples)...")
+        
+        if len(X) == 0:
+            log.warning("Skipping fit: No samples available yet.")
+            return
+
         # Ensure contamination is less than 0.5 and valid for the sample size
         c = min(self.contamination, 0.49)
         if len(nodes) < 5:
@@ -172,6 +177,16 @@ class VotingAnomalyDetector:
 
         score = self._model.score_samples(f.reshape(1, -1))[0]
         is_bad = score < self.anomaly_threshold
+
+        # ── Bootstrap Protection: NEVER flag the Bootstrap Cluster (First 4 Nodes) ──────
+        # The user explicitly requested that the initial 4 nodes (5000-5003) must NEVER be banned.
+        # Since they are the first to join, we can identify them by their position in the history dict.
+        bootstrap_node_ids = list(self._histories.keys())[:4]
+        if node_id in bootstrap_node_ids:
+            return False
+            
+        if is_bad and latest_phase == "FULL_NODE":
+            return False
 
         if is_bad:
             self._anomalies_found += 1

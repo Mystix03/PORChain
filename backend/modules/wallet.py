@@ -134,7 +134,9 @@ async def receive(tx: dict) -> bool:
     Validate an incoming TX structure over P2P.
     We no longer modify local balances. The transaction must be mined to affect balance.
     """
-    payload = {k: v for k, v in tx.items() if k != "signature"}
+    # ── Robustness: Exclude fields not included in the original signature ─────
+    payload = {k: v for k, v in tx.items() if k not in ("signature", "block_index")}
+    
     if not identity.verify(identity.canonical(payload), tx["signature"], tx["sender_pubkey"]):
         return False
     return True

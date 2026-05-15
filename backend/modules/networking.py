@@ -19,11 +19,19 @@ _seen_ids: deque = deque(maxlen=1000)   # in-memory dedup ring buffer
 
 async def load_peers() -> list[str]:
     stored = await storage.read_or_default(_PEERS_FILE, [])
-    combined = list(set(stored + config.PEERS))
-    return combined
+    # Normalize all peers to ensure they have a scheme (http://) for httpx
+    combined = []
+    for p in (stored + config.PEERS):
+        if not p: continue
+        if not p.startswith(("http://", "https://")):
+            p = f"http://{p}"
+        combined.append(p)
+    return list(set(combined))
 
 
 async def add_peer(url: str) -> None:
+    if not url.startswith(("http://", "https://")):
+        url = f"http://{url}"
     peers = await load_peers()
     if url not in peers:
         peers.append(url)
