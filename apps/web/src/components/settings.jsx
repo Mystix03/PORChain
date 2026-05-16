@@ -62,8 +62,8 @@ export default function Settings({ onClose, nodeId }) {
   };
 
   // Card B — Network state
-  const [rpcEndpoint, setRpcEndpoint] = useState("http://localhost:5000");
-  const [rpcInput, setRpcInput] = useState("http://localhost:5000");
+  const [rpcEndpoint, setRpcEndpoint] = useState("http://10.113.22.211:5000");
+  const [rpcInput, setRpcInput] = useState("http://10.113.22.211:5000");
   const [connectionStatus, setConnectionStatus] = useState("connected"); // connected | syncing | offline
   const [peers, setPeers] = useState([
     { id: 1, address: "192.168.1.42:9000" },
