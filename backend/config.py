@@ -53,6 +53,7 @@ CONSENSUS_THRESHOLD: float = 0.667
 
 # ── Wallet ─────────────────────────────────────────────────────────────────────
 GENESIS_BALANCE: float = 100.0
+BASE_BLOCK_REWARD: float = 1.0
 
 # ── Storage ────────────────────────────────────────────────────────────────────
 _BACKEND_DIR = pathlib.Path(__file__).parent.resolve()

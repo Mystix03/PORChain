@@ -7,7 +7,7 @@ Write-Host "Starting 4-node POR-Chain Cluster..." -ForegroundColor Cyan
 
 # 1. Cleanup old data
 Write-Host "Cleaning up old blockchain data..." -ForegroundColor Gray
-$Ports = 5000, 5001, 5002, 5003
+$Ports = 5000, 5001, 5002, 5003, 5004, 5005
 foreach ($p in $Ports) {
     $path = Join-Path $Root "backend\data_$p"
     if (Test-Path $path) {
@@ -42,9 +42,21 @@ Start-Process powershell `
     -WindowStyle Minimized `
     -ArgumentList "-NoExit", "-Command", "Set-Location '$Root'; . .\scripts\start_node.ps1 5003"
 
+Start-Sleep -Seconds 1
 
+Write-Host "Starting Node E - Guest 1 (5004)..."
+Start-Process powershell `
+    -WindowStyle Minimized `
+    -ArgumentList "-NoExit", "-Command", "Set-Location '$Root'; . .\scripts\start_node.ps1 5004"
 
-Write-Host "`nCluster started! All 4 windows are open and venv-activated." -ForegroundColor Green
+Start-Sleep -Seconds 1
+
+Write-Host "Starting Node F - Guest 2 (5005)..."
+Start-Process powershell `
+    -WindowStyle Minimized `
+    -ArgumentList "-NoExit", "-Command", "Set-Location '$Root'; . .\scripts\start_node.ps1 5005"
+
+Write-Host "`nCluster started! All 6 windows are open and venv-activated." -ForegroundColor Green
 Write-Host "Open your browser to:"
 Write-Host " - http://127.0.0.1:5000 (Node A)" -ForegroundColor Yellow
 Write-Host " - http://127.0.0.1:5003 (Node D - Gateway)" -ForegroundColor Yellow

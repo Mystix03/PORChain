@@ -22,6 +22,8 @@ const PRIVATE_KEY_MOCK =
 const PUBLIC_KEY_MOCK =
   "7xKq9Ab3mNpQrStUvWxYzBcDeFgHiJkLmNoPqRsTuVwXyZ12345678901234567890";
 
+import Logo from "./Logo";
+
 export default function Settings({ onClose, nodeId }) {
   const { setActiveTab, isDarkMode, toggleDarkMode } = useStore();
 
@@ -177,19 +179,7 @@ export default function Settings({ onClose, nodeId }) {
           </div>
         </div>
 
-        <div
-          style={{
-            width: 40,
-            height: 40,
-            borderRadius: 12,
-            backgroundColor: accentBlue,
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-          }}
-        >
-          <span style={{ color: "#FFF", fontSize: 18, fontWeight: "800" }}>A</span>
-        </div>
+        <Logo size={40} />
       </div>
 
       <div

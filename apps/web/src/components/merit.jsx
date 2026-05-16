@@ -316,7 +316,7 @@ export default function Merit() {
             disabled={loadingTasks || isReadOnly}
             style={{ width: "100%", background: isReadOnly ? "#E5E7EB" : "#0052FF", color: isReadOnly ? "#9CA3AF" : "white", padding: 16, borderRadius: 16, border: "none", fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", gap: 10 }}
           >
-            {loadingTasks ? <Loader size={18} className="animate-spin" /> : "📋 Load My Tasks"}
+            {loadingTasks ? <Loader size={18} className="animate-spin" /> : "Load My Tasks"}
           </button>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 10, opacity: isReadOnly ? 0.7 : 1 }}>
@@ -341,7 +341,7 @@ export default function Merit() {
                       disabled={s.solving || isReadOnly}
                       style={{ background: isReadOnly ? "#F3F4F6" : "#EEF3FF", color: isReadOnly ? "#9CA3AF" : "#0052FF", border: "none", borderRadius: 10, padding: "8px 12px", fontSize: 12, fontWeight: 700 }}
                     >
-                      {s.solving ? (t.type === 'POW' ? `⛏️ ${s.nonce}` : "...") : "Solve"}
+                      {s.solving ? (t.type === 'POW' ? `${s.nonce}` : "...") : "Solve"}
                     </button>
                   )}
                 </div>
@@ -352,7 +352,7 @@ export default function Merit() {
               disabled={submitting || !Object.values(taskState).every(s => s.found) || isReadOnly}
               style={{ marginTop: 10, width: "100%", background: isReadOnly ? "#E5E7EB" : "#05C48F", color: isReadOnly ? "#9CA3AF" : "white", padding: 16, borderRadius: 16, border: "none", fontWeight: 700 }}
             >
-              {submitting ? "Submitting..." : "🚀 Submit Verification Proofs"}
+              {submitting ? "Submitting..." : "Submit Verification Proofs"}
             </button>
           </div>
         )}

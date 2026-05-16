@@ -1,7 +1,8 @@
 "use client";
 import { useState } from "react";
 import { useStore } from "@/store/useStore";
-import { X, Zap } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { X, Zap, Scan, Camera } from "lucide-react";
 import { toast } from "sonner";
 import { sendTokens, fetchWallet, fetchWalletHistory } from "@/chain/api";
 
@@ -39,6 +40,7 @@ export default function SendModal({ onClose }) {
   const [tokenSym, setTokenSym] = useState("POR");
   const [amount,   setAmount]   = useState("");
   const [busy,     setBusy]     = useState(false);
+  const [scanning, setScanning] = useState(false);
 
   const token = tokens.find(t => t.symbol === tokenSym);
   const fromAmt = parseFloat(amount) || 0;
@@ -89,22 +91,105 @@ export default function SendModal({ onClose }) {
 
   return (
     <Sheet title="Send" onClose={onClose}>
+      <AnimatePresence>
+        {scanning && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            style={{
+              position: "absolute",
+              inset: 0,
+              zIndex: 100,
+              background: "#080B10",
+              borderRadius: "28px 28px 0 0",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: 20,
+            }}
+          >
+            <div style={{ position: "relative", width: 240, height: 240 }}>
+              {/* Corner markers */}
+              <div style={{ position:"absolute", top:0, left:0, width:30, height:30, borderLeft:"4px solid #0052FF", borderTop:"4px solid #0052FF", borderRadius:"4px 0 0 0" }} />
+              <div style={{ position:"absolute", top:0, right:0, width:30, height:30, borderRight:"4px solid #0052FF", borderTop:"4px solid #0052FF", borderRadius:"0 4px 0 0" }} />
+              <div style={{ position:"absolute", bottom:0, left:0, width:30, height:30, borderLeft:"4px solid #0052FF", borderBottom:"4px solid #0052FF", borderRadius:"0 0 0 4px" }} />
+              <div style={{ position:"absolute", bottom:0, right:0, width:30, height:30, borderRight:"4px solid #0052FF", borderBottom:"4px solid #0052FF", borderRadius:"0 0 4px 0" }} />
+              
+              <div style={{ width:"100%", height:"100%", background:"rgba(255,255,255,0.05)", borderRadius:12, overflow:"hidden", position:"relative" }}>
+                <motion.div
+                  animate={{ top: ["0%", "100%", "0%"] }}
+                  transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                  style={{
+                    position:"absolute", left:0, right:0, height:2, background:"#0052FF",
+                    boxShadow: "0 0 15px #0052FF", zIndex: 10
+                  }}
+                />
+                <div style={{ height:"100%", width:"100%", display:"flex", alignItems:"center", justifyContent:"center" }}>
+                   <Camera size={48} color="rgba(255,255,255,0.2)" />
+                </div>
+              </div>
+            </div>
+
+            <div style={{ color:"white", marginTop:24, textAlign:"center" }}>
+              <div style={{ fontSize:16, fontWeight:700, marginBottom:8 }}>Scan Node QR</div>
+              <div style={{ fontSize:13, color:"#94A3B8" }}>Align the recipient's Node ID within the frame</div>
+            </div>
+
+            <button
+              onClick={() => {
+                setToAddr("8xYz4Cd7");
+                setScanning(false);
+                toast.success("Address scanned!", { description: "8xYz4Cd7 identified." });
+              }}
+              style={{
+                marginTop:40, background:"rgba(255,255,255,0.1)", color:"white",
+                border:"none", padding:"12px 24px", borderRadius:12, fontWeight:700, cursor:"pointer"
+              }}
+            >
+              Simulate Scan
+            </button>
+            
+            <button
+              onClick={() => setScanning(false)}
+              style={{
+                marginTop:12, background:"none", color:"#94A3B8",
+                border:"none", fontSize:14, fontWeight:600, cursor:"pointer"
+              }}
+            >
+              Cancel
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* ── To address ───────────────────────────────────────────────────────── */}
       <div style={{ marginBottom:14 }}>
         <div style={{ fontSize:11, color:"#9CA3AF", fontWeight:600, marginBottom:8 }}>Recipient</div>
-        <input
-          type="text"
-          placeholder="Node ID or wallet address"
-          value={toAddr}
-          onChange={e => setToAddr(e.target.value)}
-          style={{
-            width:"100%", padding:"14px 16px", borderRadius:14,
-            border:"1.5px solid", borderColor: toAddr.length > 3 ? "#0052FF" : "#E5E7EB",
-            fontSize:13, color:"#0D1421", outline:"none", background:"#F9FAFB",
-            boxSizing:"border-box", fontFamily:"monospace",
-          }}
-        />
+        <div style={{ position:"relative" }}>
+          <input
+            type="text"
+            placeholder="Node ID or wallet address"
+            value={toAddr}
+            onChange={e => setToAddr(e.target.value)}
+            style={{
+              width:"100%", padding:"14px 48px 14px 16px", borderRadius:14,
+              border:"1.5px solid", borderColor: toAddr.length > 3 ? "#0052FF" : "#E5E7EB",
+              fontSize:13, color:"#0D1421", outline:"none", background:"#F9FAFB",
+              boxSizing:"border-box", fontFamily:"monospace",
+            }}
+          />
+          <button
+            onClick={() => setScanning(true)}
+            style={{
+              position:"absolute", right:12, top:"50%", transform:"translateY(-50%)",
+              background:"none", border:"none", padding:4, cursor:"pointer"
+            }}
+          >
+            <Scan size={18} color="#0052FF" />
+          </button>
+        </div>
         {/* Quick addresses */}
         <div style={{ display:"flex", gap:6, marginTop:8, flexWrap:"wrap" }}>
           {DEMO_ADDRESSES.map(a => (

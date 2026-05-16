@@ -80,7 +80,7 @@ async def history(address: str = None) -> list:
     txs = []
     
     def process_event(ev, block_index):
-        if ev.get("type") in ("SEND", "STAKE", "UNSTAKE", "SLASH"):
+        if ev.get("type") in ("SEND", "STAKE", "UNSTAKE", "SLASH", "REWARD"):
             record = ev.copy()
             record["block_index"] = block_index
             

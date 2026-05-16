@@ -2,13 +2,11 @@
 import { useStore } from "@/store/useStore";
 import { motion } from "framer-motion";
 import {
-  TrendingUp,
   ArrowUpRight,
   ArrowDownLeft,
   Send,
   Download,
   Repeat,
-  Vote,
   Zap,
   ChevronRight,
   CheckCircle,
@@ -20,13 +18,15 @@ import {
   Gift,
   Globe,
   Box,
+  Download as ReceiveIcon,
+  TrendingUp,
 } from "lucide-react";
 import { useState, useRef } from "react";
 
 const ACTIVITY_META = {
   task: { color: "#05C48F", bg: "#ECFDF5", Icon: CheckCircle },
   vouch: { color: "#0052FF", bg: "#EEF3FF", Icon: Shield },
-  reputation: { color: "#8B5CF6", bg: "#F5F3FF", Icon: TrendingUp },
+  reputation: { color: "#8B5CF6", bg: "#F5F3FF", Icon: Zap },
   phase: { color: "#F59E0B", bg: "#FFFBEB", Icon: Award },
   send: { color: "#EF4444", bg: "#FEF2F2", Icon: ArrowUpRight },
   receive: { color: "#10B981", bg: "#ECFDF5", Icon: ArrowDownLeft },
@@ -43,7 +43,6 @@ export default function Home() {
     reputation,
     phase,
     tasksCompleted,
-    reputationGrowth,
     meritBoost,
     tokens,
     activities,
@@ -115,15 +114,7 @@ export default function Home() {
                 ? "••••••"
                 : `${walletBalance.toFixed(2)} POR`}
             </div>
-            <div
-              style={{
-                fontSize: 13,
-                color: "var(--text-secondary)",
-                marginTop: 4,
-              }}
-            >
-              {hideBalance ? "•••" : `$${(walletBalance * 1.5).toFixed(2)} USD (Est.)`}
-            </div>
+
           </div>
           <button
             onClick={() => setHideBalance(!hideBalance)}
@@ -151,24 +142,24 @@ export default function Home() {
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "repeat(4, 1fr)",
+            gridTemplateColumns: `repeat(${claimedGenesis ? 3 : 4}, 1fr)`,
             gap: 10,
           }}
         >
           {[
-            { label: "Send",  Icon: Send,     color: "#0052FF", modal: "send" },
-            { label: "Swap",  Icon: Repeat,   color: "#8B5CF6", modal: "swap" },
-            {
-              label: claimedGenesis ? "Claimed" : "Claim",
-              Icon: graduated ? (claimedGenesis ? CheckCircle : Gift) : Lock,
-              color: graduated && !claimedGenesis ? "#10B981" : "#9CA3AF",
+            { label: "Send", Icon: Send, color: "#0052FF", modal: "send" },
+            { label: "Receive", Icon: ReceiveIcon, color: "#10B981", modal: "receive" },
+            { label: "Swap", Icon: Repeat, color: "#8B5CF6", modal: "swap" },
+            !claimedGenesis && {
+              label: "Claim",
+              Icon: graduated ? Gift : Lock,
+              color: graduated ? "#10B981" : "#9CA3AF",
               modal: "claim",
             },
-            { label: "Vote",  Icon: Vote,     color: "#F59E0B", modal: null },
-          ].map(({ label, Icon, color, modal }) => (
+          ].filter(Boolean).map(({ label, Icon, color, modal }) => (
             <button
               key={label}
-              onClick={() => modal ? setActiveModal(modal) : setActiveTab("merit")}
+              onClick={() => modal ? setActiveModal(modal) : setActiveTab(graduated ? "validate" : "merit")}
               style={{
                 background: "var(--bg-input)",
                 borderRadius: 14,
@@ -209,7 +200,7 @@ export default function Home() {
       </motion.div>
 
       {/* ── Network Status Strip ─────────────────────────────────────────────── */}
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.1, staggerChildren: 0.05 }}
@@ -241,7 +232,7 @@ export default function Home() {
             bg: walletStaked > 0 ? "rgba(245, 158, 11, 0.12)" : "var(--bg-input)",
           },
         ].map(({ label, value, icon, color, bg }) => (
-          <motion.div 
+          <motion.div
             key={label}
             whileHover={{ y: -2 }}
             style={{
@@ -331,89 +322,20 @@ export default function Home() {
             </div>
             <div
               style={{
-                position: "relative",
-                width: 90,
-                height: 90,
+                color: "white",
+                fontSize: 42,
+                fontWeight: 900,
+                lineHeight: 1,
+                letterSpacing: -1.5,
+                margin: "8px 0",
                 display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                justifyContent: "center",
-                margin: "4px 0",
+                alignItems: "baseline",
               }}
             >
-              {/* Radial Progress Ring */}
-              <svg width="90" height="90" viewBox="0 0 100 100" style={{ position: "absolute", top: 0, left: 0 }}>
-                {/* Base Background Ring */}
-                <circle
-                  cx="50"
-                  cy="50"
-                  r="44"
-                  fill="none"
-                  stroke="rgba(255, 255, 255, 0.15)"
-                  strokeWidth="5"
-                />
-                {/* Animated Completion Ring */}
-                <motion.circle
-                  cx="50"
-                  cy="50"
-                  r="44"
-                  fill="none"
-                  stroke="#FFFFFF"
-                  strokeWidth="5"
-                  strokeLinecap="round"
-                  transform="rotate(-90 50 50)"
-                  initial={{ strokeDasharray: "276.46", strokeDashoffset: "276.46" }}
-                  animate={{ strokeDashoffset: (276.46 * (1 - reputation)).toString() }}
-                  transition={{ duration: 1.2, ease: "easeOut", delay: 0.3 }}
-                />
-              </svg>
+              {repPercent}
+              <span style={{ fontSize: 22, fontWeight: 700, opacity: 0.9, marginLeft: 2 }}>%</span>
+            </div>
 
-              {/* Content Inside Ring */}
-              <div
-                style={{
-                  position: "relative",
-                  color: "white",
-                  fontSize: 26,
-                  fontWeight: 900,
-                  lineHeight: 1.1,
-                  letterSpacing: -0.5,
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  gap: 1,
-                }}
-              >
-                <Award size={15} color="rgba(255,255,255,0.9)" style={{ marginBottom: -2 }} />
-                <div style={{ display: "flex", alignItems: "baseline" }}>
-                  {repPercent}
-                  <span style={{ fontSize: 13, fontWeight: 700, opacity: 0.9, marginLeft: 1 }}>%</span>
-                </div>
-              </div>
-            </div>
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 5,
-                marginTop: 10,
-              }}
-            >
-              <div
-                style={{
-                  background: "rgba(255,255,255,0.2)",
-                  borderRadius: 20,
-                  padding: "3px 8px",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 4,
-                }}
-              >
-                <TrendingUp size={12} color="white" />
-                <span style={{ color: "white", fontSize: 12, fontWeight: 600 }}>
-                  +{reputationGrowth.toFixed(1)}% this week
-                </span>
-              </div>
-            </div>
           </div>
           <div
             style={{
@@ -635,197 +557,7 @@ export default function Home() {
         </div>
       )}
 
-      {/* Token List */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.3 }}
-        style={{
-          background: "var(--bg-card)",
-          borderRadius: 20,
-          overflow: "hidden",
-          marginBottom: 20,
-          boxShadow: "0 1px 6px rgba(0,0,0,0.06)",
-        }}
-      >
-        <div
-          style={{
-            padding: "16px 16px 12px",
-            borderBottom: "1px solid #F5F5F5",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-          }}
-        >
-          <span style={{ fontSize: 15, fontWeight: 700, color: "var(--text-primary)" }}>
-            Assets
-          </span>
-          <span style={{ fontSize: 12, color: "#0052FF", fontWeight: 600 }}>
-            See all
-          </span>
-        </div>
-        {tokens.map((token, i) => (
-          <motion.div
-            key={token.symbol}
-            whileHover={{ background: "var(--bg-input)" }}
-            style={{
-              padding: "14px 16px",
-              borderBottom:
-                i < tokens.length - 1 ? "1px solid #F9F9F9" : "none",
-              display: "flex",
-              alignItems: "center",
-              gap: 12,
-              cursor: "pointer",
-            }}
-          >
-            <div
-              style={{
-                width: 42,
-                height: 42,
-                borderRadius: 12,
-                background: "var(--bg-input)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontSize: 18,
-                flexShrink: 0,
-              }}
-            >
-              {token.logo === "Shield" ? <Shield size={22} color="#0052FF" /> : token.logo}
-            </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div
-                style={{
-                  fontSize: 14,
-                  fontWeight: 700,
-                  color: "var(--text-primary)",
-                }}
-              >
-                {token.symbol}
-              </div>
-              <div style={{ fontSize: 11, color: "var(--text-secondary)", marginTop: 1 }}>
-                {token.balance >= 1000
-                  ? token.balance.toLocaleString()
-                  : token.balance.toFixed(2)}{" "}
-                {token.symbol}
-              </div>
-            </div>
-            <div style={{ textAlign: "right" }}>
-              <div
-                style={{
-                  fontSize: 14,
-                  fontWeight: 700,
-                  color: "var(--text-primary)",
-                }}
-              >
-                ${token.value.toFixed(2)}
-              </div>
-              <div
-                style={{
-                  fontSize: 11,
-                  color: token.change24h >= 0 ? "#10B981" : "#EF4444",
-                  marginTop: 1,
-                  fontWeight: 600,
-                }}
-              >
-                {token.change24h >= 0 ? "+" : ""}
-                {token.change24h.toFixed(2)}%
-              </div>
-            </div>
-          </motion.div>
-        ))}
-      </motion.div>
 
-      {/* Recent Activity */}
-      <div
-        style={{
-          background: "var(--bg-card)",
-          borderRadius: 20,
-          overflow: "hidden",
-          boxShadow: "0 1px 6px rgba(0,0,0,0.06)",
-          marginBottom: 8,
-        }}
-      >
-        <div
-          style={{
-            padding: "16px 16px 12px",
-            borderBottom: "1px solid #F5F5F5",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-          }}
-        >
-          <span style={{ fontSize: 15, fontWeight: 700, color: "var(--text-primary)" }}>
-            Recent Activity
-          </span>
-          <button
-            onClick={() => setActiveTab("activity")}
-            style={{
-              fontSize: 12,
-              color: "#0052FF",
-              fontWeight: 600,
-              background: "none",
-              border: "none",
-              cursor: "pointer",
-            }}
-          >
-            See all
-          </button>
-        </div>
-
-        {activities.slice(0, 5).map((activity, i) => {
-          const meta = ACTIVITY_META[activity.type] || ACTIVITY_META.default;
-          const { Icon, color, bg } = meta;
-          return (
-            <div
-              key={activity.id || i}
-              style={{
-                padding: "13px 16px",
-                borderBottom:
-                  i < Math.min(activities.length, 5) - 1
-                    ? "1px solid #F9F9F9"
-                    : "none",
-                display: "flex",
-                alignItems: "center",
-                gap: 12,
-              }}
-            >
-              <div
-                style={{
-                  width: 40,
-                  height: 40,
-                  borderRadius: 12,
-                  background: bg,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  flexShrink: 0,
-                }}
-              >
-                <Icon size={18} color={color} />
-              </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div
-                  style={{
-                    fontSize: 13,
-                    fontWeight: 600,
-                    color: "var(--text-primary)",
-                    whiteSpace: "nowrap",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                  }}
-                >
-                  {activity.message}
-                </div>
-                <div style={{ fontSize: 11, color: "var(--text-secondary)", marginTop: 2 }}>
-                  {activity.time}
-                </div>
-              </div>
-              <ChevronRight size={15} color="#D1D5DB" />
-            </div>
-          );
-        })}
-      </div>
     </div>
   );
 }

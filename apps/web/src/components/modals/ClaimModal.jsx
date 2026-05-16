@@ -36,7 +36,7 @@ export default function ClaimModal({ onClose }) {
     await new Promise(r => setTimeout(r, 1600));
     execClaim();
     setDone(true);
-    toast.success("250 USDC claimed!", {
+    toast.success("10 POR claimed!", {
       description: "Validator Genesis Reward deposited to your wallet",
     });
     setBusy(false);
@@ -57,7 +57,7 @@ export default function ClaimModal({ onClose }) {
           </div>
           <div style={{ fontSize:13, color:"#6B7280", lineHeight:1.6, marginBottom:28 }}>
             Complete all 3 Proof-of-Reputation phases to unlock your{" "}
-            <span style={{ color:"#0052FF", fontWeight:700 }}>250 USDC Validator Genesis Reward</span>.
+            <span style={{ color:"#0052FF", fontWeight:700 }}>10 POR Validator Genesis Reward</span>.
           </div>
 
           {/* Phase checklist */}
@@ -90,7 +90,7 @@ export default function ClaimModal({ onClose }) {
             Reward Claimed!
           </div>
           <div style={{ fontSize:13, color:"#6B7280" }}>
-            250 USDC has been deposited to your wallet.
+            10 POR has been deposited to your wallet.
           </div>
         </div>
       </Sheet>
@@ -122,7 +122,7 @@ export default function ClaimModal({ onClose }) {
         {/* Reward card */}
         <div style={{ background:"linear-gradient(135deg,#05C48F,#059669)", borderRadius:20, padding:"20px 24px", marginBottom:24, boxShadow:"0 6px 20px rgba(5,196,143,0.30)" }}>
           <div style={{ color:"rgba(255,255,255,0.8)", fontSize:11, fontWeight:600, marginBottom:6 }}>You will receive</div>
-          <div style={{ color:"white", fontSize:40, fontWeight:900, letterSpacing:-1 }}>250 <span style={{ fontSize:20 }}>USDC</span></div>
+          <div style={{ color:"white", fontSize:40, fontWeight:900, letterSpacing:-1 }}>10 <span style={{ fontSize:20 }}>POR</span></div>
           <div style={{ color:"rgba(255,255,255,0.7)", fontSize:11, marginTop:6 }}>
             Deposited instantly · No staking lock-up
           </div>
@@ -140,7 +140,7 @@ export default function ClaimModal({ onClose }) {
             boxShadow: busy ? "none" : "0 4px 16px rgba(5,196,143,0.35)",
           }}
         >
-          {busy ? "Processing…" : "Claim 250 USDC"}
+          {busy ? "Processing…" : "Claim 10 POR"}
         </button>
       </div>
     </Sheet>

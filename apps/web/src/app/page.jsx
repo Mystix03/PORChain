@@ -1,5 +1,5 @@
 "use client";
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Splash from "@/components/splash";
 import { useStore } from "@/store/useStore";
@@ -8,14 +8,16 @@ import Home from "@/components/home";
 import Merit from "@/components/merit";
 import Validate from "@/components/validate";
 import Reputation from "@/components/reputation";
-import Vouch from "@/components/vouch";
 import Activity from "@/components/activity";
 import Chain from "@/components/chain";
 import SwapModal  from "@/components/modals/SwapModal";
 import SendModal  from "@/components/modals/SendModal";
 import ClaimModal from "@/components/modals/ClaimModal";
 import SlashModal from "@/components/modals/SlashModal";
+import ReceiveModal from "@/components/modals/ReceiveModal";
 import Settings from "@/components/settings";
+import BiometricLock from "@/components/modals/BiometricLock";
+import Logo from "@/components/Logo";
 import { NodeProvider, NodeStatusBadge } from "@/chain/node.jsx";
 import { useSyncStore } from "@/chain/useSyncStore";
 import {
@@ -51,15 +53,22 @@ export default function App() {
   } = useStore();
 
   const [showSplash, setShowSplash] = useState(true);
+  const [showBiometrics, setShowBiometrics] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   useSyncStore(); // polls Python backend every 6s → syncs Zustand store
 
+  useEffect(() => {
+    if (graduated && activeTab === "merit") {
+      setActiveTab("validate");
+    }
+  }, [graduated, activeTab, setActiveTab]);
+
   const TABS = [
     { id: "home",       label: "Home",     Icon: HomeIcon   },
-    { id: "merit",      label: "Merit",    Icon: Zap        },
-    ...(graduated ? [{ id: "validate", label: "Validate", Icon: ShieldCheck }] : []),
+    ...(graduated 
+      ? [{ id: "validate", label: "Validate", Icon: ShieldCheck }]
+      : [{ id: "merit",      label: "Merit",    Icon: Zap        }]),
     { id: "reputation", label: "Rep",      Icon: TrendingUp },
-    { id: "vouch",      label: "Vouch",    Icon: Users      },
     { id: "activity",   label: "Activity", Icon: List       },
   ];
 
@@ -120,7 +129,6 @@ export default function App() {
       case "merit":      return <Merit />;
       case "validate":   return <Validate />;
       case "reputation": return <Reputation />;
-      case "vouch":      return <Vouch />;
       case "chain":      return <Chain />;
       case "activity":   return <Activity />;
       default:           return <Home />;
@@ -129,7 +137,7 @@ export default function App() {
 
   return (
     <NodeProvider>
-      <style jsx global>{`
+      <style>{`
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { background: #E8EDF5; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
         ::-webkit-scrollbar { display: none; }
@@ -224,16 +232,7 @@ export default function App() {
                     userSelect: "none",
                   }}
                 >
-                  <span
-                    style={{
-                      color: "white",
-                      fontSize: 18,
-                      lineHeight: 1,
-                      fontWeight: 800,
-                    }}
-                  >
-                    A
-                  </span>
+                  <Logo size={36} />
                 </div>
                 <div>
                   <div
@@ -300,8 +299,8 @@ export default function App() {
                         strokeWidth="2.5"
                         strokeLinecap="round"
                         transform="rotate(-90 8 8)"
-                        initial={{ strokeDasharray: "40.84", strokeDashoffset: "40.84" }}
-                        animate={{ strokeDashoffset: (40.84 * (1 - reputation)).toString() }}
+                        initial={{ strokeDasharray: "40.84", strokeDashoffset: 40.84 }}
+                        animate={{ strokeDashoffset: 40.84 * (1 - reputation) }}
                         transition={{ duration: 1.5, ease: "easeOut", delay: 0.5 }}
                       />
                     </svg>
@@ -600,11 +599,22 @@ export default function App() {
           {showSettings && <Settings onClose={() => setShowSettings(false)} nodeId={wallet} />}
 
           {/* ── Splash screen (first launch overlay) ── */}
-          {showSplash && <Splash onDone={() => setShowSplash(false)} />}
+          {showSplash && <Splash onDone={() => {
+            setShowSplash(false);
+            setShowBiometrics(true);
+          }} />}
+
+          {/* ── Biometric Security overlay ── */}
+          <AnimatePresence>
+            {showBiometrics && (
+              <BiometricLock onUnlock={() => setShowBiometrics(false)} />
+            )}
+          </AnimatePresence>
 
           {/* ── Wallet action modals ── */}
           {activeModal === "swap"  && <SwapModal  onClose={() => setActiveModal(null)} />}
           {activeModal === "send"  && <SendModal  onClose={() => setActiveModal(null)} />}
+          {activeModal === "receive" && <ReceiveModal onClose={() => setActiveModal(null)} />}
           {activeModal === "claim" && <ClaimModal onClose={() => setActiveModal(null)} />}
           {activeModal === "slash" && <SlashModal onClose={() => setActiveModal(null)} />}
         </div>

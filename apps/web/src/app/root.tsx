@@ -453,9 +453,5 @@ export function Layout({ children }: { children: ReactNode }) {
 }
 
 export default function App() {
-  return (
-    <SessionProvider>
-      <Outlet />
-    </SessionProvider>
-  );
+  return <Outlet />;
 }

@@ -11,6 +11,7 @@ import {
   Lock,
   AlertTriangle,
   Gavel,
+  Search,
 } from "lucide-react";
 import { vouchForNode, penalizeNode, fetchPhase2Nodes, fetchFlaggedNodes } from "@/chain/api";
 
@@ -24,10 +25,37 @@ export default function Validate() {
   const [vouchStatus,   setVouchStatus]   = useState("idle");
   const [vouchedList,   setVouchedList]   = useState([]);
   const [slashProgress, setSlashProgress] = useState({});
+  const [search, setSearch] = useState("");
 
   useEffect(() => {
-    fetchPhase2Nodes().then(setIncomingRequests).catch(console.error);
-    fetchFlaggedNodes().then(setFlaggedNodes).catch(console.error);
+    fetchPhase2Nodes()
+      .then(nodes => {
+        if (!nodes || nodes.length === 0) {
+          // Provide mock data for demonstration if empty
+          setIncomingRequests([
+            { node_id: "0x8F2A3b9C1", honest_rounds: 45, isMock: true },
+            { node_id: "0x3E7D5a4F2", honest_rounds: 22, isMock: true },
+            { node_id: "0x9B1C2d8E5", honest_rounds: 12, isMock: true },
+          ]);
+        } else {
+          setIncomingRequests(nodes);
+        }
+      })
+      .catch(console.error);
+
+    fetchFlaggedNodes()
+      .then(nodes => {
+        if (!nodes || nodes.length === 0) {
+          // Provide mock data for demonstration if empty
+          setFlaggedNodes([
+            { node_id: "0x1A2B8c3D4", phase: "UNDER_OBSERVATION", isMock: true },
+            { node_id: "0x5E6F27A8B", phase: "BANNED", isMock: true },
+          ]);
+        } else {
+          setFlaggedNodes(nodes);
+        }
+      })
+      .catch(console.error);
   }, []);
 
 
@@ -40,7 +68,11 @@ export default function Validate() {
     setVouchingFor(node.node_id);
     setVouchStatus("pending");
     try {
-      await vouchForNode(node.node_id);
+      if (node.isMock) {
+        await new Promise(r => setTimeout(r, 800));
+      } else {
+        await vouchForNode(node.node_id);
+      }
       setVouchedList(prev => [node.node_id, ...prev]);
       setReputation(Math.min(1, reputation + 0.015));
       addActivity({
@@ -73,7 +105,11 @@ export default function Validate() {
     setSlashProgress(prev => ({ ...prev, [node.node_id]: "pending" }));
 
     try {
-      await penalizeNode(node.node_id);
+      if (node.isMock) {
+        await new Promise(r => setTimeout(r, 600));
+      } else {
+        await penalizeNode(node.node_id);
+      }
       toast.success("Slash recorded!", {
         description: "Node penalized via PoR network.",
         duration: 5000,
@@ -141,6 +177,36 @@ export default function Validate() {
       </div>
 
       {/* ── Vouch requests ───────────────────────────────────────────────────── */}
+      <div style={{ position: "relative", marginBottom: 20 }}>
+        <Search
+          size={16}
+          color="#9CA3AF"
+          style={{
+            position: "absolute",
+            left: 14,
+            top: "50%",
+            transform: "translateY(-50%)",
+          }}
+        />
+        <input
+          type="text"
+          placeholder="Search node ID…"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          style={{
+            width: "100%",
+            padding: "12px 14px 12px 40px",
+            borderRadius: 14,
+            border: "1.5px solid #E5E7EB",
+            background: "var(--bg-card)",
+            fontSize: 14,
+            color: "var(--text-primary)",
+            outline: "none",
+            boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
+          }}
+        />
+      </div>
+
       <div style={{ marginBottom: 8 }}>
         <div style={{ fontSize: 15, fontWeight: 800, color: "var(--text-primary)", marginBottom: 4 }}>
           Vouch Requests
@@ -151,7 +217,7 @@ export default function Validate() {
       </div>
 
       <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 24 }}>
-        {incomingRequests.map((node) => {
+        {incomingRequests.filter(n => !search || n.node_id.toLowerCase().includes(search.toLowerCase())).map((node) => {
           const shortId = node.node_id.slice(0, 8) + "...";
           const alreadyVouched = vouchedList.includes(node.node_id);
           const isVouching = vouchingFor === node.node_id && vouchStatus === "pending";
@@ -247,7 +313,7 @@ export default function Validate() {
       </div>
 
       <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 28 }}>
-        {flaggedNodes.map((node) => {
+        {flaggedNodes.filter(n => !search || n.node_id.toLowerCase().includes(search.toLowerCase())).map((node) => {
           const shortId = node.node_id.slice(0, 8) + "...";
           const status = slashProgress[node.node_id];
           const pending = status === "pending";

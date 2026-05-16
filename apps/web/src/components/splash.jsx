@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
+import Logo from "./Logo";
 
 // ── Deterministic particle data (SSR-safe, no hydration mismatch) ─────────────
 function ihash(n) { return ((n * 2654435761) >>> 0); }
@@ -62,7 +63,8 @@ export default function Splash({ onDone }) {
     const t3 = setTimeout(() => setFadeOut(true),   2750);
     const t4 = setTimeout(() => onDone?.(),         3080);
     return () => [t1, t2, t3, t4].forEach(clearTimeout);
-  }, [onDone]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <div
@@ -278,20 +280,17 @@ export default function Splash({ onDone }) {
               pointerEvents: "none",
             }} />
 
-            {/* ASCENT text */}
-            <span style={{
-              color:         "rgba(255,255,255,0.97)",
-              fontSize:      26,
-              fontWeight:    800,
-              letterSpacing: "7px",
-              fontFamily:    "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
-              animation:     "ascent-text-glow 2.8s ease-in-out 1.2s infinite",
-              position:      "relative",
-              zIndex:        2,
-              userSelect:    "none",
+            {/* Iconic Logo centered in Orb */}
+            <div style={{ animation: "ascent-text-glow 2.8s ease-in-out 1.2s infinite" }}>
+               <Logo size={120} style={{ background: "none", boxShadow: "none" }} />
+            </div>
+            <div style={{
+              position: "absolute", bottom: 40,
+              fontSize: 14, fontWeight: 800, color: "rgba(255,255,255,0.6)",
+              letterSpacing: 4, textTransform: "uppercase"
             }}>
-              ASCENT
-            </span>
+               Ascent
+            </div>
           </div>
         </div>
 
@@ -345,38 +344,7 @@ export default function Splash({ onDone }) {
         </div>
       </div>
 
-      {/* ── Footer ──────────────────────────────────────────────────────────── */}
-      <div style={{
-        position:      "absolute",
-        bottom:        44,
-        left:          0,
-        right:         0,
-        display:       "flex",
-        flexDirection: "column",
-        alignItems:    "center",
-        gap:           4,
-        zIndex:        10,
-        opacity:       footerIn ? 0.5 : 0,
-        transition:    "opacity 1.0s ease",
-        pointerEvents: "none",
-      }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
-          {/* PoR Network brand mark */}
-          <div style={{
-            width: 8, height: 8, borderRadius: "50%",
-            background: "#05C48F",
-            boxShadow: "0 0 6px rgba(5,196,143,0.7)",
-          }} />
-          <span style={{
-            color: "var(--text-secondary)",
-            fontSize:      11,
-            fontWeight:    600,
-            letterSpacing: "0.5px",
-          }}>
-            Proof-of-Reputation Network
-          </span>
-        </div>
-      </div>
+
 
       {/* ── Version ─────────────────────────────────────────────────────────── */}
       <div style={{

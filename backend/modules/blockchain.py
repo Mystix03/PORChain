@@ -95,13 +95,36 @@ async def propose_block(events: list) -> dict:
     """Build and sign a new block from pending events."""
     node = identity.get()
     prev = await last_block()
+    
+    from modules import reputation
+    import config
+    import uuid
+    rep = await reputation.get_score(node["node_id"])
+    merit_boost = max(1.0, 1.0 + (rep - 0.1) * 0.5)
+    reward_amt = round(config.BASE_BLOCK_REWARD * merit_boost, 4)
+    
+    reward_event = {
+        "tx_id": str(uuid.uuid4()),
+        "type": "REWARD",
+        "from": "NETWORK",
+        "to": node["node_id"],
+        "amount": reward_amt,
+        "note": f"Block #{prev['index'] + 1} Reward (Boost {merit_boost:.2f}x)",
+        "timestamp": time.time(),
+        "sender_pubkey": node["public_key"],
+    }
+    reward_event["signature"] = identity.sign(identity.canonical(reward_event))
+    
+    # Use a copy to avoid mutating the original pending events list directly here
+    block_events = [reward_event] + events
+
     block = {
         "index": prev["index"] + 1,
         "previous_hash": prev["hash"],
         "timestamp": time.time(),
-        "events": events,
+        "events": block_events,
         "proposer": node["node_id"],
-        "merkle_root": _merkle_root(events),
+        "merkle_root": _merkle_root(block_events),
     }
     block["hash"] = _hash_block(block)
     block["signature"] = identity.sign(block["hash"])
@@ -167,6 +190,9 @@ def calculate_balance(address: str, chain: list) -> dict:
             elif type_ == "SLASH" and ev.get("from") == address:
                 staked -= amt
 
+            elif type_ == "REWARD" and ev.get("to") == address:
+                balance += amt
+
     return {"balance": balance, "staked": staked, "address": address}
 
 
@@ -189,7 +215,7 @@ async def _verify_transactions(events: list, chain: list) -> bool:
         type_ = ev.get("type")
         if type_ in ("GENESIS", "GENESIS_GRANT", "FAUCET_GRANT"):
             continue
-        if type_ in ("SEND", "STAKE", "UNSTAKE", "SLASH"):
+        if type_ in ("SEND", "STAKE", "UNSTAKE", "SLASH", "REWARD"):
             sender = ev.get("from")
             amt = ev.get("amount", 0.0)
             
@@ -208,7 +234,7 @@ async def _verify_transactions(events: list, chain: list) -> bool:
             # SIGNATURE VERIFICATION
             payload = {k: v for k, v in ev.items() if k not in ("signature", "block_index")}
             
-            is_protocol_tx = type_ in ("SLASH", "UNSTAKE")
+            is_protocol_tx = type_ in ("SLASH", "UNSTAKE", "REWARD")
             if is_protocol_tx:
                 from modules import registry as reg
                 signer_id = pub_bytes.hex()
@@ -217,8 +243,9 @@ async def _verify_transactions(events: list, chain: list) -> bool:
                 is_authority = signer_info and signer_info.get("phase") == "FULL_NODE"
                 target_node_in_note = ev.get("note", "").split(":")[-1]
                 is_self_slash = (signer_id == target_node_in_note)
+                is_self_reward = (type_ == "REWARD" and signer_id == ev.get("to"))
 
-                if is_authority or is_self_slash:
+                if is_authority or is_self_slash or is_self_reward:
                     if not identity.verify(identity.canonical(payload), sig, pubkey):
                         log.error(f"❌ TX Validation Failed: Invalid Authority Signature from {signer_id}!")
                         return False
@@ -248,6 +275,18 @@ async def _verify_transactions(events: list, chain: list) -> bool:
                 state["staked"] -= amt
                 if type_ == "UNSTAKE":
                     state["balance"] += amt
+            elif type_ == "REWARD":
+                from modules import reputation
+                import config
+                rep = await reputation.get_score(ev.get("to"))
+                expected_boost = max(1.0, 1.0 + (rep - 0.1) * 0.5)
+                expected_reward = round(config.BASE_BLOCK_REWARD * expected_boost, 4)
+                
+                if amt > expected_reward + 0.0001:
+                    log.error(f"❌ TX Validation Failed: Invalid Reward Amount {amt} > {expected_reward} for {ev.get('to')}")
+                    return False
+                recv_state = get_state(ev.get("to"))
+                recv_state["balance"] += amt
 
     return True
 

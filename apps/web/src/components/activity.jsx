@@ -7,6 +7,7 @@ import {
   ArrowUpRight, ArrowDownLeft, Repeat, Zap,
   ChevronRight, Lock, Slash, Link, Inbox, Clock,
 } from "lucide-react";
+import ReceiptModal from "./modals/ReceiptModal";
 
 const ACTIVITY_META = {
   task: { color: "#05C48F", bg: "#ECFDF5", Icon: CheckCircle, label: "Task Verified" },
@@ -20,6 +21,7 @@ const ACTIVITY_META = {
   STAKE: { color: "#0052FF", bg: "#EEF3FF", Icon: Lock, label: "Staked" },
   UNSTAKE: { color: "#F59E0B", bg: "#FFFBEB", Icon: Lock, label: "Unstaked" },
   SLASH: { color: "#DC2626", bg: "#FEF2F2", Icon: Slash, label: "Slashed" },
+  REWARD: { color: "#F59E0B", bg: "#FFFBEB", Icon: Zap, label: "Block Reward" },
   swap: { color: "#3B82F6", bg: "#EFF6FF", Icon: Repeat, label: "Swapped" },
   default: { color: "var(--text-secondary)", bg: "#F9FAFB", Icon: Zap, label: "Activity" },
 };
@@ -53,6 +55,7 @@ function chainTxToActivity(tx) {
   }
   else if (type === "UNSTAKE") message = `Unstaked ${tx.amount?.toFixed(4)} POR (${tx.note || "released"})`;
   else if (type === "SLASH") message = `Slashed ${tx.amount?.toFixed(4)} POR — ${tx.note || "penalty"}`;
+  else if (type === "REWARD") message = `Earned ${tx.amount?.toFixed(4)} POR — ${tx.note || "block reward"}`;
   else message = `${type} · ${tx.amount?.toFixed(4)} POR`;
 
   const blockLabel = tx.block_index === "Pending" ? <><Clock size={11} style={{ display: "inline", marginRight: 4 }} />Pending</> : `Block #${tx.block_index}`;
@@ -75,6 +78,7 @@ const FILTERS = ["All", "Transactions", "Staking", "PoR Events"];
 export default function Activity() {
   const { activities, chainHistory } = useStore();
   const [activeFilter, setActiveFilter] = useState("All");
+  const [selectedActivity, setSelectedActivity] = useState(null);
 
   // Convert on-chain TXs to the same shape as local activities
   const chainActivities = (chainHistory ?? []).map(chainTxToActivity);
@@ -90,7 +94,7 @@ export default function Activity() {
     ...localOnly,
   ].slice(0, 60);
 
-  const txTypes = new Set(["SEND", "RECEIVE", "send", "receive", "swap"]);
+  const txTypes = new Set(["SEND", "RECEIVE", "send", "receive", "swap", "REWARD"]);
   const stakeTypes = new Set(["STAKE", "UNSTAKE", "SLASH"]);
 
   // Apply filtering
@@ -204,13 +208,14 @@ export default function Activity() {
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: i * 0.03 }}
                   whileHover={{ background: "#F9FAFB", scale: 1.01 }}
+                  onClick={() => activity.isOnChain && setSelectedActivity(activity)}
                   style={{
                     background: isPending ? "#FFFBEB" : "white",
                     borderRadius: 18, padding: "16px",
                     boxShadow: isPending
                       ? "0 0 0 1.5px #FDE68A, 0 2px 8px rgba(0,0,0,0.05)"
                       : "0 1px 5px rgba(0,0,0,0.06)",
-                    display: "flex", alignItems: "center", gap: 14, cursor: "pointer",
+                    display: "flex", alignItems: "center", gap: 14, cursor: activity.isOnChain ? "pointer" : "default",
                   }}
                 >
                   <div style={{
@@ -236,10 +241,10 @@ export default function Activity() {
                     <div style={{ textAlign: "right", flexShrink: 0 }}>
                       <div style={{
                         fontSize: 15, fontWeight: 800,
-                        color: ["RECEIVE", "receive", "UNSTAKE"].includes(activity.type)
+                        color: ["RECEIVE", "receive", "UNSTAKE", "REWARD"].includes(activity.type)
                           ? "#10B981" : "#0D1421",
                       }}>
-                        {["RECEIVE", "receive", "UNSTAKE"].includes(activity.type) ? "+" : "−"}
+                        {["RECEIVE", "receive", "UNSTAKE", "REWARD"].includes(activity.type) ? "+" : "−"}
                         {typeof activity.amount === "number" ? activity.amount.toFixed(4) : activity.amount} POR
                       </div>
                     </div>
@@ -263,6 +268,15 @@ export default function Activity() {
         </button>
       )}
       <div style={{ height: 20 }} />
+
+      <AnimatePresence>
+        {selectedActivity && (
+          <ReceiptModal
+            activity={selectedActivity}
+            onClose={() => setSelectedActivity(null)}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }

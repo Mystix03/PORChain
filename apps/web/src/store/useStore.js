@@ -30,6 +30,7 @@ const INITIAL_STATE = {
   meritBoost:       1.0,
   reputationGrowth: 0,
   escrowAtRisk:     0,
+  claimedGenesis:   false,
 
   // ── Eligibility flags ────────────────────────────────────────────────────────
   eligibleToVouch:   false,
@@ -283,7 +284,8 @@ export const useStore = create((set) => ({
 
   execClaim: () =>
     set((state) => ({
-      walletBalance: state.walletBalance + 250,
+      walletBalance: state.walletBalance + 10,
+      claimedGenesis: true,
       activities: [
         { id: Date.now(), type: "receive",
           message: "Validator Genesis Reward — 250 POR claimed",
